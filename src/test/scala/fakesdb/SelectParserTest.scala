@@ -76,14 +76,6 @@ class SelectParserTest {
   }
 
   @Test
-  def testFromCountUpperCase(): Unit = {
-    domaina.getOrCreateItem("itema").put("a", "1", true)
-    val results = SelectParser.makeSelectEval("SELECT COUNT(*) FROM domaina").select(data)._1
-    assertEquals(1, results.size)
-    assertEquals(("Domain", List(("Count", "1"))), results(0))
-  }
-
-  @Test
   def testFromItemName(): Unit = {
     domaina.getOrCreateItem("itema").put("a", "1", true)
     val results = SelectParser.makeSelectEval("select itemName(), a from domaina").select(data)._1
@@ -323,14 +315,6 @@ class SelectParserTest {
   }
 
   @Test
-  def testCaseInsensitiveKeywords(): Unit = {
-    domaina.getOrCreateItem("itema").put("foo_bar", "1", true)
-    val results = SelectParser.makeSelectEval("SELECT * FROM domaina WHERE foo_bar = '1'").select(data)._1
-    assertEquals(1, results.size)
-    assertEquals(("itema", List(("foo_bar", "1"))), results(0))
-  }
-
-  @Test
   def testLarrysQuery(): Unit = {
     val usage = data.getOrCreateDomain("dev.api-web-usage")
     val a = usage.getOrCreateItem("itema")
@@ -345,12 +329,12 @@ class SelectParserTest {
     domaina.getOrCreateItem("itema").put("foo", "1", true)
     domaina.getOrCreateItem("itemb").put("foo", "2", true)
     domaina.getOrCreateItem("itemc").put("foo", "3", true)
-    val results = SelectParser.makeSelectEval("SELECT * FROM domaina WHERE foo > '0' limit 2").select(data)._1
+    val results = SelectParser.makeSelectEval("select * from domaina where foo > '0' limit 2").select(data)._1
     assertEquals(2, results.size)
     assertEquals(("itema", List(("foo", "1"))), results(0))
     assertEquals(("itemb", List(("foo", "2"))), results(1))
     // Now with order by
-    val results2 = SelectParser.makeSelectEval("SELECT * FROM domaina WHERE foo > '0' order by foo desc limit 2").select(data)._1
+    val results2 = SelectParser.makeSelectEval("select * from domaina where foo > '0' order by foo desc limit 2").select(data)._1
     assertEquals(2, results2.size)
     assertEquals(("itemc", List(("foo", "3"))), results2(0))
     assertEquals(("itemb", List(("foo", "2"))), results2(1))
