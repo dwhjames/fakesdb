@@ -63,15 +63,47 @@ sealed abstract class WhereEval {
   }
 }
 
+sealed abstract class Predicate extends Function1[String, Boolean] {
+  /** Lifted logical and */
+  def &&(that: Predicate)= new Predicate {
+    def apply(v: String): Boolean = this(v) && that(v)
+  }
+  /** Lifted logical or */
+  def ||(that: Predicate) = new Predicate {
+    def apply(v: String): Boolean = this(v) || that(v)
+  }
+}
+
+case class BinOpPredicate(op: String, value: String) extends Predicate {
+  val predicate: Function1[String, Boolean] = op match {
+    case "="        => _ == value
+    case "!="       => _ != value
+    case ">"        => _ > value
+    case "<"        => _ < value
+    case ">="       => _ >= value
+    case "<="       => _ <= value
+    case "like"     => _.matches(value.replaceAll("%", ".*"))
+    case "not-like" => !_.matches(value.replaceAll("%", ".*"))
+  }
+  def apply(v: String): Boolean = predicate(v)
+}
+
+case class RangePredicate(lower: String, upper: String) extends Predicate {
+  def apply(v: String): Boolean = (v >= lower) && (v <= upper)
+}
+
+case class ContainsPredicate(values: Set[String]) extends Predicate {
+  def apply(v: String): Boolean = values.contains(v)
+}
+
 case object NoopWhere extends WhereEval {
   def filter(domain: Domain, items: List[Item]): List[Item] = items
 }
 
-case class SimpleWhereEval(name: String, op: String, value: String) extends WhereEval {
+case class SimpleWhereEval(name: String, pred: Predicate) extends WhereEval {
   def filter(domain: Domain, items: List[Item]): List[Item] = {
-    val func = getFunc(op)
     items.filter((i: Item) => i.getAttribute(name) match {
-      case Some(a) => a.getValues.find(func(_, value)).isDefined
+      case Some(a) => a.getValues.exists(pred(_))
       case None => false
     }).toList
   }
@@ -120,24 +152,6 @@ case class IsNullEval(name: String, isNull: Boolean) extends WhereEval {
       i.getAttribute(name).isEmpty
     } else {
       i.getAttribute(name).isDefined
-    }).toList
-  }
-}
-
-case class IsBetweenEval(name: String, lower: String, upper: String) extends WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item] = {
-    items.filter((i: Item) => i.getAttribute(name) match {
-      case Some(a) => a.getValues.exists(_ >= lower) && a.getValues.exists(_ <= upper)
-      case None => false
-    }).toList
-  }
-}
-
-case class InEval(name: String, values: List[String]) extends WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item] = {
-    items.filter((i: Item) => i.getAttribute(name) match {
-      case Some(a) => a.getValues.exists(values.contains(_))
-      case None => false
     }).toList
   }
 }
@@ -252,17 +266,17 @@ object SelectParser extends StandardTokenParsers {
     | ident ~ ("is" ~> ( "null"          ^^^ { IsNullEval(_: String, true) }
                        | "not" ~! "null" ^^^ { IsNullEval(_: String, false) }
                        )
-              | comparisonOp
+              | comparisonOp ^^ { pred => SimpleWhereEval(_:String, pred) }
               ) ^^ { case i ~ f => f(i)}
     )
 
-  def comparisonOp: Parser[Function1[String,WhereEval]] =
+  def comparisonOp: Parser[Predicate] =
     ( ("between" ~> stringLit) ~! ("and" ~> stringLit)
-        ^^ { case a ~ b => IsBetweenEval(_: String, a, b) }
+        ^^ { case lower ~ upper => RangePredicate(lower, upper) }
     | ("in" ~> "(" ~> repsep(stringLit, ",") <~ ")")
-        ^^ { strs => InEval(_: String, strs) }
+        ^^ { strs => ContainsPredicate(strs.toSet) }
     | op ~! stringLit
-        ^^ { case o ~ v => SimpleWhereEval(_: String, o, v) }
+        ^^ { case o ~ v => BinOpPredicate(o, v) }
     )
 
   def outputList: Parser[OutputEval] =
