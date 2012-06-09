@@ -13,5 +13,6 @@ libraryDependencies ++= Seq(
   "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided",
   "junit" % "junit" % "4.8.2" % "test",
   "com.novocode" % "junit-interface" % "0.8" % "test",
+  "org.scalatest" %% "scalatest" % "1.7.2" % "test",
   "com.amazonaws" % "aws-java-sdk" % "1.3.10" % "test"
 )
