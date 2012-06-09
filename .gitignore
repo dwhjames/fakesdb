@@ -5,3 +5,7 @@ boot
 lib
 lib_managed
 .scala_dependencies
+.classpath
+.project
+.settings
+
