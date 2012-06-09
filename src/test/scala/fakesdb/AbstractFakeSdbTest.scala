@@ -8,15 +8,8 @@ import com.amazonaws.services.simpledb.AmazonSimpleDBClient
 import com.amazonaws.services.simpledb.model._
 import scala.collection.JavaConversions._
 
-object AbstractFakeSdbTest {
-  val jetty = Jetty(8080)
-  jetty.server.start()
-}
-
 abstract class AbstractFakeSdbTest {
 
-  // start jetty
-  AbstractFakeSdbTest.jetty
   val sdb = new AmazonSimpleDBClient(new BasicAWSCredentials("ignored", "ignored"))
   sdb.setEndpoint("http://127.0.0.1:8080")
 
