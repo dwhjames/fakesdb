@@ -125,11 +125,10 @@ case class SomeDrop(count: Int) {
   def drop(items: List[Item]) = items drop count
 }
 
-case class EveryEval(name: String, op: String, value: String) extends WhereEval {
+case class EveryEval(name: String, pred: Predicate) extends WhereEval {
   override def filter(domain: Domain, items: List[Item]): List[Item] = {
-    val func = getFunc(op)
     items.filter((i: Item) => i.getAttribute(name) match {
-      case Some(a) => a.getValues.forall(func(_, value))
+      case Some(a) => a.getValues.forall(pred(_))
       case None => false
     }).toList
   }
@@ -261,13 +260,13 @@ object SelectParser extends StandardTokenParsers {
 
   def simplePredicate: Parser[WhereEval] =
     ( "(" ~> where <~ ")"
-    | ("every" ~> "(" ~> ident <~ ")") ~! op ~! stringLit
-        ^^ { case i ~ o ~ v => EveryEval(i, o, v)}
-    | ident ~ ("is" ~> ( "null"          ^^^ { IsNullEval(_: String, true) }
-                       | "not" ~! "null" ^^^ { IsNullEval(_: String, false) }
-                       )
-              | comparisonOp ^^ { pred => SimpleWhereEval(_:String, pred) }
-              ) ^^ { case i ~ f => f(i)}
+    | ("every" ~> "(" ~> ident <~ ")") ~! comparisonOp
+        ^^ { case i ~ p => EveryEval(i, p)}
+    | ident ~! ("is" ~> ( "null"          ^^^ { IsNullEval(_: String, true) }
+                        | "not" ~! "null" ^^^ { IsNullEval(_: String, false) }
+                        )
+               | comparisonOp ^^ { pred => SimpleWhereEval(_:String, pred) }
+               ) ^^ { case i ~ f => f(i)}
     )
 
   def comparisonOp: Parser[Predicate] =

@@ -120,7 +120,7 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
     evaluating { parsing("a in 'b'")} should produce [Exception]
     evaluating { parsing("a in 'b', 'c'")} should produce [Exception]
     
-    parsing("every(a) = 'b'") should equal (EveryEval("a", "=", "b"))
+    parsing("every(a) = 'b'") should equal (EveryEval("a", BinOpPredicate("=", "b")))
     evaluating { parsing("every a = 'b'") } should produce [Exception]
     
     parsing("(a = 'b' and c = 'd')") should equal (CompoundWhereEval(SimpleWhereEval("a", BinOpPredicate("=",  "b")),
@@ -243,15 +243,13 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
                                        ),
                       NoopOrder, NoopLimit))
     )
-    /* Currently unsupported
     (
       parsing("select * from mydomain where every(keyword) in ('Book', 'Paperback')")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      EveryEval("keyword", ),
+                      EveryEval("keyword", ContainsPredicate(Set("Book", "Paperback"))),
                       NoopOrder, NoopLimit))
     )
-    */
     /* http://docs.amazonwebservices.com/AmazonSimpleDB/latest/DeveloperGuide/MultipleAttributeQueriesSelect.html */
     (
       parsing("select * from mydomain where Rating = '****'")
@@ -264,7 +262,7 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where every(Rating) = '****'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      EveryEval("Rating", "=", "****"),
+                      EveryEval("Rating", BinOpPredicate("=", "****")),
                       NoopOrder, NoopLimit))
     )
     (
