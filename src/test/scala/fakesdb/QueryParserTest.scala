@@ -93,15 +93,15 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
 
   it should "parse simple predicates" in {
     implicit val parserToTest = simplePredicate
-    parsing("a =  'b'") should equal (SimpleWhereEval("a", BinOpPredicate("=",  "b")))
-    parsing("a != 'b'") should equal (SimpleWhereEval("a", BinOpPredicate("!=", "b")))
-    parsing("a >  'b'") should equal (SimpleWhereEval("a", BinOpPredicate(">",  "b")))
-    parsing("a >= 'b'") should equal (SimpleWhereEval("a", BinOpPredicate(">=", "b")))
-    parsing("a <  'b'") should equal (SimpleWhereEval("a", BinOpPredicate("<",  "b")))
-    parsing("a <= 'b'") should equal (SimpleWhereEval("a", BinOpPredicate("<=", "b")))
+    parsing("a =  'b'") should equal (ExistsEval("a", BinOpPredicate("=",  "b")))
+    parsing("a != 'b'") should equal (ExistsEval("a", BinOpPredicate("!=", "b")))
+    parsing("a >  'b'") should equal (ExistsEval("a", BinOpPredicate(">",  "b")))
+    parsing("a >= 'b'") should equal (ExistsEval("a", BinOpPredicate(">=", "b")))
+    parsing("a <  'b'") should equal (ExistsEval("a", BinOpPredicate("<",  "b")))
+    parsing("a <= 'b'") should equal (ExistsEval("a", BinOpPredicate("<=", "b")))
     
-    parsing("a like 'b'") should equal (SimpleWhereEval("a", BinOpPredicate("like", "b")))
-    parsing("a not like 'b'") should equal (SimpleWhereEval("a", BinOpPredicate("not-like", "b")))
+    parsing("a like 'b'") should equal (ExistsEval("a", BinOpPredicate("like", "b")))
+    parsing("a not like 'b'") should equal (ExistsEval("a", BinOpPredicate("not-like", "b")))
     evaluating { parsing("a not 'b'")} should produce [Exception]
     
     parsing("a is null") should equal (IsNullEval("a", true))
@@ -109,13 +109,13 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
     parsing("a is not null") should equal (IsNullEval("a", false))
     evaluating { parsing("a is not") } should produce [Exception]
     
-    parsing("a between 'b' and 'c'") should equal (SimpleWhereEval("a", RangePredicate("b", "c")))
+    parsing("a between 'b' and 'c'") should equal (ExistsEval("a", RangePredicate("b", "c")))
     evaluating { parsing("a between 'b'") } should produce [Exception]
     evaluating { parsing("a between 'b' 'c'") } should produce [Exception]
     evaluating { parsing("a between 'b' and") } should produce [Exception]
     
-    parsing("a in ('b')") should equal (SimpleWhereEval("a", ContainsPredicate(Set("b"))))
-    parsing("a in ('b', 'c')") should equal (SimpleWhereEval("a", ContainsPredicate(Set("b", "c"))))
+    parsing("a in ('b')") should equal (ExistsEval("a", ContainsPredicate(Set("b"))))
+    parsing("a in ('b', 'c')") should equal (ExistsEval("a", ContainsPredicate(Set("b", "c"))))
     evaluating { parsing("a in ('b',)")} should produce [Exception]
     evaluating { parsing("a in 'b'")} should produce [Exception]
     evaluating { parsing("a in 'b', 'c'")} should produce [Exception]
@@ -123,31 +123,31 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
     parsing("every(a) = 'b'") should equal (EveryEval("a", BinOpPredicate("=", "b")))
     evaluating { parsing("every a = 'b'") } should produce [Exception]
     
-    parsing("(a = 'b' and c = 'd')") should equal (CompoundWhereEval(SimpleWhereEval("a", BinOpPredicate("=",  "b")),
+    parsing("(a = 'b' and c = 'd')") should equal (CompoundWhereEval(ExistsEval("a", BinOpPredicate("=",  "b")),
                                                                      "and",
-                                                                     SimpleWhereEval("c", BinOpPredicate("=",  "d"))))
+                                                                     ExistsEval("c", BinOpPredicate("=",  "d"))))
   }
 
   it should "parse compound predicates" in {
     implicit val parserToTest = where
-    parsing("a = 'b'") should equal (SimpleWhereEval("a", BinOpPredicate("=", "b")))
-    parsing("a = 'b' and c = 'd'") should equal (CompoundWhereEval(SimpleWhereEval("a", BinOpPredicate("=",  "b")),
+    parsing("a = 'b'") should equal (ExistsEval("a", BinOpPredicate("=", "b")))
+    parsing("a = 'b' and c = 'd'") should equal (CompoundWhereEval(ExistsEval("a", BinOpPredicate("=",  "b")),
                                                                    "and",
-                                                                   SimpleWhereEval("c", BinOpPredicate("=",  "d"))))
+                                                                   ExistsEval("c", BinOpPredicate("=",  "d"))))
     
-    parsing("a = 'b' or c = 'd'") should equal (CompoundWhereEval(SimpleWhereEval("a", BinOpPredicate("=",  "b")),
+    parsing("a = 'b' or c = 'd'") should equal (CompoundWhereEval(ExistsEval("a", BinOpPredicate("=",  "b")),
                                                                   "or",
-                                                                  SimpleWhereEval("c", BinOpPredicate("=",  "d"))))
+                                                                  ExistsEval("c", BinOpPredicate("=",  "d"))))
     
-    parsing("a = 'b' intersection c = 'd'") should equal (CompoundWhereEval(SimpleWhereEval("a", BinOpPredicate("=",  "b")),
+    parsing("a = 'b' intersection c = 'd'") should equal (CompoundWhereEval(ExistsEval("a", BinOpPredicate("=",  "b")),
                                                                             "intersection",
-                                                                            SimpleWhereEval("c", BinOpPredicate("=",  "d"))))
+                                                                            ExistsEval("c", BinOpPredicate("=",  "d"))))
   }
 
   it should "parse where clauses" in {
     implicit val parserToTest = whereClause
     parsing("") should equal (NoopWhere)
-    parsing("where a = 'b'") should equal (SimpleWhereEval("a", BinOpPredicate("=",  "b")))
+    parsing("where a = 'b'") should equal (ExistsEval("a", BinOpPredicate("=",  "b")))
   }
 
   it should "parse Amazon's examples" in {
@@ -157,28 +157,28 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Title = 'The Right Stuff'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Title", BinOpPredicate("=", "The Right Stuff")),
+                      ExistsEval("Title", BinOpPredicate("=", "The Right Stuff")),
                       NoopOrder, NoopLimit))
     )
     (
       parsing("select * from mydomain where Year > '1985'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Year", BinOpPredicate(">", "1985")),
+                      ExistsEval("Year", BinOpPredicate(">", "1985")),
                       NoopOrder, NoopLimit))
     )
     (
       parsing("select * from mydomain where Rating like '****%'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Rating", BinOpPredicate("like", "****%")),
+                      ExistsEval("Rating", BinOpPredicate("like", "****%")),
                       NoopOrder, NoopLimit))
     )
     (
       parsing("select * from mydomain where Pages < '00320'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Pages", BinOpPredicate("<", "00320")),
+                      ExistsEval("Pages", BinOpPredicate("<", "00320")),
                       NoopOrder, NoopLimit))
     )
     /* http://docs.amazonwebservices.com/AmazonSimpleDB/latest/DeveloperGuide/RangeQueriesSelect.html */
@@ -186,9 +186,9 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Year > '1975' and Year < '2008'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      CompoundWhereEval(SimpleWhereEval("Year", BinOpPredicate(">", "1975")),
+                      CompoundWhereEval(ExistsEval("Year", BinOpPredicate(">", "1975")),
                                         "and",
-                                        SimpleWhereEval("Year", BinOpPredicate("<", "2008"))
+                                        ExistsEval("Year", BinOpPredicate("<", "2008"))
                                        ),
                       NoopOrder, NoopLimit))
     )
@@ -196,16 +196,16 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Year between '1975' and '2008'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Year", RangePredicate("1975", "2008")),
+                      ExistsEval("Year", RangePredicate("1975", "2008")),
                       NoopOrder, NoopLimit))
     )
     (
       parsing("select * from mydomain where Rating = '***' or Rating = '*****'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      CompoundWhereEval(SimpleWhereEval("Rating", BinOpPredicate("=", "***")),
+                      CompoundWhereEval(ExistsEval("Rating", BinOpPredicate("=", "***")),
                                         "or",
-                                        SimpleWhereEval("Rating", BinOpPredicate("=", "*****"))
+                                        ExistsEval("Rating", BinOpPredicate("=", "*****"))
                                        ),
                       NoopOrder, NoopLimit))
     )
@@ -213,13 +213,13 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where (Year > '1950' and Year < '1960') or Year like '193%' or Year = '2007'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      CompoundWhereEval(CompoundWhereEval(SimpleWhereEval("Year", BinOpPredicate(">", "1950")),
+                      CompoundWhereEval(CompoundWhereEval(ExistsEval("Year", BinOpPredicate(">", "1950")),
                                                           "and",
-                                                          SimpleWhereEval("Year", BinOpPredicate("<", "1960"))),
+                                                          ExistsEval("Year", BinOpPredicate("<", "1960"))),
                                         "or",
-                                        CompoundWhereEval(SimpleWhereEval("Year", BinOpPredicate("like", "193%")),
+                                        CompoundWhereEval(ExistsEval("Year", BinOpPredicate("like", "193%")),
                                                           "or",
-                                                          SimpleWhereEval("Year", BinOpPredicate("=", "2007")))),
+                                                          ExistsEval("Year", BinOpPredicate("=", "2007")))),
                       NoopOrder, NoopLimit))
     )
     /* http://docs.amazonwebservices.com/AmazonSimpleDB/latest/DeveloperGuide/RangeValueQueriesSelect.html */
@@ -227,9 +227,9 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Rating = '4 stars' or Rating = '****'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      CompoundWhereEval(SimpleWhereEval("Rating", BinOpPredicate("=", "4 stars")),
+                      CompoundWhereEval(ExistsEval("Rating", BinOpPredicate("=", "4 stars")),
                                         "or",
-                                        SimpleWhereEval("Rating", BinOpPredicate("=", "****"))
+                                        ExistsEval("Rating", BinOpPredicate("=", "****"))
                                        ),
                       NoopOrder, NoopLimit))
     )
@@ -237,9 +237,9 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Keyword = 'Book' and Keyword = 'Hardcover'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      CompoundWhereEval(SimpleWhereEval("Keyword", BinOpPredicate("=", "Book")),
+                      CompoundWhereEval(ExistsEval("Keyword", BinOpPredicate("=", "Book")),
                                         "and",
-                                        SimpleWhereEval("Keyword", BinOpPredicate("=", "Hardcover"))
+                                        ExistsEval("Keyword", BinOpPredicate("=", "Hardcover"))
                                        ),
                       NoopOrder, NoopLimit))
     )
@@ -255,7 +255,7 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Rating = '****'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Rating", BinOpPredicate("=", "****")),
+                      ExistsEval("Rating", BinOpPredicate("=", "****")),
                       NoopOrder, NoopLimit))
     )
     (
@@ -269,9 +269,9 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Keyword = 'Book' intersection Keyword = 'Hardcover'")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      CompoundWhereEval(SimpleWhereEval("Keyword", BinOpPredicate("=", "Book")),
+                      CompoundWhereEval(ExistsEval("Keyword", BinOpPredicate("=", "Book")),
                                         "intersection",
-                                        SimpleWhereEval("Keyword", BinOpPredicate("=", "Hardcover"))
+                                        ExistsEval("Keyword", BinOpPredicate("=", "Hardcover"))
                                        ),
                       NoopOrder, NoopLimit))
     )
@@ -280,21 +280,21 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Year < '1980' order by Year asc")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Year", BinOpPredicate("<", "1980")),
+                      ExistsEval("Year", BinOpPredicate("<", "1980")),
                       SimpleOrderEval("Year", "asc"), NoopLimit))
     )
     (
       parsing("select * from mydomain where Year < '1980' order by Year")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Year", BinOpPredicate("<", "1980")),
+                      ExistsEval("Year", BinOpPredicate("<", "1980")),
                       SimpleOrderEval("Year", "asc"), NoopLimit))
     )
     (
       parsing("select * from mydomain where Year = '2007' intersection Author is not null order by Author desc")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      CompoundWhereEval(SimpleWhereEval("Year", BinOpPredicate("=", "2007")),
+                      CompoundWhereEval(ExistsEval("Year", BinOpPredicate("=", "2007")),
                                         "intersection",
                                         IsNullEval("Author", false)
                                        ),
@@ -304,14 +304,14 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select * from mydomain where Year < '1980' order by Year limit 2")
         should equal
           (SelectEval(AllOutput, "mydomain",
-                      SimpleWhereEval("Year", BinOpPredicate("<", "1980")),
+                      ExistsEval("Year", BinOpPredicate("<", "1980")),
                       SimpleOrderEval("Year", "asc"), SomeLimit(2)))
     )
     (
       parsing("select itemName() from mydomain where itemName() like 'B000%' order by itemName()")
         should equal
           (SelectEval(CompoundOutput(List("itemName()")), "mydomain",
-                      SimpleWhereEval("itemName()", BinOpPredicate("like", "B000%")),
+                      ExistsEval("itemName()", BinOpPredicate("like", "B000%")),
                       SimpleOrderEval("itemName()", "asc"), NoopLimit))
     )
     /* http://docs.amazonwebservices.com/AmazonSimpleDB/latest/DeveloperGuide/CountingDataSelect.html */
@@ -319,14 +319,14 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
       parsing("select count(*) from mydomain where Title = 'The Right Stuff'")
         should equal
           (SelectEval(CountOutput, "mydomain",
-                      SimpleWhereEval("Title", BinOpPredicate("=", "The Right Stuff")),
+                      ExistsEval("Title", BinOpPredicate("=", "The Right Stuff")),
                       NoopOrder, NoopLimit))
     )
     (
       parsing("select count(*) from mydomain where Year > '1985'")
         should equal
           (SelectEval(CountOutput, "mydomain",
-                      SimpleWhereEval("Year", BinOpPredicate(">", "1985")),
+                      ExistsEval("Year", BinOpPredicate(">", "1985")),
                       NoopOrder, NoopLimit))
     )
     (

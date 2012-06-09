@@ -48,21 +48,6 @@ case object CountOutput extends OutputEval {
   }
 }
 
-sealed abstract class WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item]
-
-  protected def getFunc(op: String): Function2[String, String, Boolean] = op match {
-    case "=" => _ == _
-    case "!=" => _ != _
-    case ">" => _ > _
-    case "<" => _ < _
-    case ">=" => _ >= _
-    case "<=" => _ <= _
-    case "like" => (v1, v2) => v1.matches(v2.replaceAll("%", ".*"))
-    case "not-like" => (v1, v2) => !v1.matches(v2.replaceAll("%", ".*"))
-  }
-}
-
 sealed abstract class Predicate extends Function1[String, Boolean] {
   /** Lifted logical and */
   def &&(that: Predicate)= new Predicate {
@@ -96,16 +81,50 @@ case class ContainsPredicate(values: Set[String]) extends Predicate {
   def apply(v: String): Boolean = values.contains(v)
 }
 
+sealed abstract class WhereEval {
+  def filter(domain: Domain, items: List[Item]): List[Item]
+}
+
 case object NoopWhere extends WhereEval {
   def filter(domain: Domain, items: List[Item]): List[Item] = items
 }
 
-case class SimpleWhereEval(name: String, pred: Predicate) extends WhereEval {
+case class ExistsEval(name: String, pred: Predicate) extends WhereEval {
   def filter(domain: Domain, items: List[Item]): List[Item] = {
     items.filter((i: Item) => i.getAttribute(name) match {
       case Some(a) => a.getValues.exists(pred(_))
       case None => false
     }).toList
+  }
+}
+
+case class EveryEval(name: String, pred: Predicate) extends WhereEval {
+  override def filter(domain: Domain, items: List[Item]): List[Item] = {
+    items.filter((i: Item) => i.getAttribute(name) match {
+      case Some(a) => a.getValues.forall(pred(_))
+      case None => false
+    }).toList
+  }
+}
+
+case class IsNullEval(name: String, isNull: Boolean) extends WhereEval {
+  def filter(domain: Domain, items: List[Item]): List[Item] = {
+    items.filter((i: Item) => if (isNull) {
+      i.getAttribute(name).isEmpty
+    } else {
+      i.getAttribute(name).isDefined
+    }).toList
+  }
+}
+
+case class CompoundWhereEval(sp: WhereEval, op: String, rest: WhereEval) extends WhereEval {
+  def filter(domain: Domain, items: List[Item]): List[Item] = {
+    op match {
+      case "intersection" => sp.filter(domain, items).toList intersect rest.filter(domain, items).toList
+      case "and" => sp.filter(domain, items).toList intersect rest.filter(domain, items).toList
+      case "or" => sp.filter(domain, items).toList union rest.filter(domain, items).toList
+      case _ => sys.error("Invalid operator "+op)
+    }
   }
 }
 
@@ -123,36 +142,6 @@ case class SomeLimit(limit: Int) extends LimitEval {
 
 case class SomeDrop(count: Int) {
   def drop(items: List[Item]) = items drop count
-}
-
-case class EveryEval(name: String, pred: Predicate) extends WhereEval {
-  override def filter(domain: Domain, items: List[Item]): List[Item] = {
-    items.filter((i: Item) => i.getAttribute(name) match {
-      case Some(a) => a.getValues.forall(pred(_))
-      case None => false
-    }).toList
-  }
-}
-
-case class CompoundWhereEval(sp: WhereEval, op: String, rest: WhereEval) extends WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item] = {
-    op match {
-      case "intersection" => sp.filter(domain, items).toList intersect rest.filter(domain, items).toList
-      case "and" => sp.filter(domain, items).toList intersect rest.filter(domain, items).toList
-      case "or" => sp.filter(domain, items).toList union rest.filter(domain, items).toList
-      case _ => sys.error("Invalid operator "+op)
-    }
-  }
-}
-
-case class IsNullEval(name: String, isNull: Boolean) extends WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item] = {
-    items.filter((i: Item) => if (isNull) {
-      i.getAttribute(name).isEmpty
-    } else {
-      i.getAttribute(name).isDefined
-    }).toList
-  }
 }
 
 sealed abstract class OrderEval {
@@ -265,7 +254,7 @@ object SelectParser extends StandardTokenParsers {
     | ident ~! ("is" ~> ( "null"          ^^^ { IsNullEval(_: String, true) }
                         | "not" ~! "null" ^^^ { IsNullEval(_: String, false) }
                         )
-               | comparisonOp ^^ { pred => SimpleWhereEval(_:String, pred) }
+               | comparisonOp ^^ { pred => ExistsEval(_:String, pred) }
                ) ^^ { case i ~ f => f(i)}
     )
 
