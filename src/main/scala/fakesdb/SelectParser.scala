@@ -60,6 +60,7 @@ sealed abstract class Predicate extends Function1[String, Boolean] {
 }
 
 case class BinOpPredicate(op: String, value: String) extends Predicate {
+  import java.util.regex.Pattern
   val predicate: Function1[String, Boolean] = op match {
     case "="        => _ == value
     case "!="       => _ != value
@@ -67,8 +68,25 @@ case class BinOpPredicate(op: String, value: String) extends Predicate {
     case "<"        => _ < value
     case ">="       => _ >= value
     case "<="       => _ <= value
-    case "like"     => _.matches(value.replaceAll("%", ".*"))
-    case "not-like" => !_.matches(value.replaceAll("%", ".*"))
+    case "like"     => compilePattern(value).matcher(_).matches
+    case "not-like" => !compilePattern(value).matcher(_).matches
+  }
+  protected def compilePattern(str: String): Pattern = {
+    import scala.collection.mutable.StringBuilder
+    var start = 0
+    var end = str.length
+    val pat = new StringBuilder(end)
+    if (str.startsWith("%")) {
+      pat ++= ".*"
+      start += 1
+    }
+    pat ++= "\\Q"
+    val pcntAtEnd = !str.endsWith("\\%") && str.endsWith("%")
+    if (pcntAtEnd) end -= 1
+    pat ++= str.substring(start, end)
+    pat ++= "\\E"
+    if (pcntAtEnd) pat ++= ".*"
+    Pattern.compile(pat.toString)
   }
   def apply(v: String): Boolean = predicate(v)
 }

@@ -63,11 +63,9 @@ class QueryEvalSuite extends FunSuite with BeforeAndAfter {
     assert(items.size === 3)
     assert(items === List("B000T9886K", "B00005JPLW", "B000SF3NGK"))
     
-    /* bug in regex implementation of like '****%'
     items = queryItemNames("select * from mydomain where Rating like '****%'")
     assert(items.size === 4)
-    assert(items === List("0385333498", "1579124585", "0802131786", "B000SF3NGK"))
-    */
+    assert(items === List("0385333498", "0802131786", "1579124585", "B000SF3NGK"))
     
     items = queryItemNames("select * from mydomain where Pages < '00320'")
     assert(items.size === 2)
