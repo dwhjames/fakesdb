@@ -51,85 +51,85 @@ class QueryEvalSuite extends FunSuite with BeforeAndAfter {
     domain.getOrCreateItem("B000SF3NGK").put("Rating", "*****", false)
   }
   
-  private def queryItemNames(query: String): List[String] =
+  private def queryItemNames(query: String): Seq[String] =
     SelectParser.makeSelectEval(query).select(data)._1.map(_._1)
   
   test("Simple Queries") {
     var items = queryItemNames("select * from mydomain where Title = 'The Right Stuff'")
     assert(items.size === 1)
-    assert(items === List("1579124585"))
+    assert(items === Seq("1579124585"))
     
     items = queryItemNames("select * from mydomain where Year > '1985'")
     assert(items.size === 3)
-    assert(items === List("B000T9886K", "B00005JPLW", "B000SF3NGK"))
+    assert(items === Seq("B000T9886K", "B00005JPLW", "B000SF3NGK"))
     
     items = queryItemNames("select * from mydomain where Rating like '****%'")
     assert(items.size === 4)
-    assert(items === List("0385333498", "0802131786", "1579124585", "B000SF3NGK"))
+    assert(items === Seq("0385333498", "0802131786", "1579124585", "B000SF3NGK"))
     
     items = queryItemNames("select * from mydomain where Pages < '00320'")
     assert(items.size === 2)
-    assert(items === List("0802131786", "1579124585"))
+    assert(items === Seq("0802131786", "1579124585"))
   }
   
   test("Range Queries") {
     var items = queryItemNames("select * from mydomain where Year > '1975' and Year < '2008'")
     assert(items.size === 4)
-    assert(items === List("1579124585", "B000T9886K", "B00005JPLW", "B000SF3NGK"))
+    assert(items === Seq("1579124585", "B000T9886K", "B00005JPLW", "B000SF3NGK"))
     
     items = queryItemNames("select * from mydomain where Year between '1975' and '2008'")
     assert(items.size === 4)
-    assert(items === List("1579124585", "B000T9886K", "B00005JPLW", "B000SF3NGK"))
+    assert(items === Seq("1579124585", "B000T9886K", "B00005JPLW", "B000SF3NGK"))
     
     items = queryItemNames("select * from mydomain where Rating = '***' or Rating = '*****'")
     assert(items.size === 3)
-    assert(items === List("0385333498", "B00005JPLW", "B000SF3NGK"))
+    assert(items === Seq("0385333498", "B00005JPLW", "B000SF3NGK"))
     
     items = queryItemNames("select * from mydomain where (Year > '1950' and Year < '1960') or Year like '193%' or Year = '2007'")
     assert(items.size === 4)
-    assert(items === List("0385333498", "0802131786", "B000T9886K", "B00005JPLW"))
+    assert(items === Seq("0385333498", "0802131786", "B000T9886K", "B00005JPLW"))
   }
   
   test("Queries on Attributes with Multiple Values") {
     
     var items = queryItemNames("select * from mydomain where Rating = '4 stars' or Rating = '****'")
     assert(items.size === 3)
-    assert(items === List("0802131786", "1579124585", "B000T9886K"))
+    assert(items === Seq("0802131786", "1579124585", "B000T9886K"))
     
     items = queryItemNames("select * from mydomain where Keyword = 'Book' and Keyword = 'Hardcover'")
     assert(items.size === 0)
     
     items = queryItemNames("select * from mydomain where every(Keyword) in ('Book', 'Paperback')")
     assert(items.size === 2)
-    assert(items === List("0385333498", "0802131786"))
+    assert(items === Seq("0385333498", "0802131786"))
   }
   
   test("Multiple Attribute Queries") {
     var items = queryItemNames("select * from mydomain where Rating = '****'")
     assert(items.size === 2)
-    assert(items === List("0802131786", "1579124585"))
+    assert(items === Seq("0802131786", "1579124585"))
     
     items = queryItemNames("select * from mydomain where every(Rating) = '****'")
     assert(items.size === 1)
-    assert(items === List("0802131786"))
+    assert(items === Seq("0802131786"))
     
     items = queryItemNames("select * from mydomain where Keyword = 'Book' intersection Keyword = 'Hardcover'")
     assert(items.size === 1)
-    assert(items === List("1579124585"))
+    assert(items === Seq("1579124585"))
   }
   
   test("Sort Queries") {
     var items = queryItemNames("select * from mydomain where Year < '1980' order by Year asc")
     assert(items.size === 3)
-    assert(items === List("0802131786", "0385333498", "1579124585"))
+    assert(items === Seq("0802131786", "0385333498", "1579124585"))
     
     items = queryItemNames("select * from mydomain where Year < '1980' order by Year")
     assert(items.size === 3)
-    assert(items === List("0802131786", "0385333498", "1579124585"))
+    assert(items === Seq("0802131786", "0385333498", "1579124585"))
     
     items = queryItemNames("select * from mydomain where Year = '2007' intersection Author is not null order by Author desc")
     assert(items.size === 2)
-    assert(items === List("B00005JPLW", "B000T9886K"))
+    assert(items === Seq("B00005JPLW", "B000T9886K"))
     
     /* bug: select query not validated
     intercept[Exception] {
@@ -140,12 +140,12 @@ class QueryEvalSuite extends FunSuite with BeforeAndAfter {
     
     items = queryItemNames("select * from mydomain where Year < '1980' order by Year limit 2")
     assert(items.size === 2)
-    assert(items === List("0802131786", "0385333498"))
+    assert(items === Seq("0802131786", "0385333498"))
     
     /* bug: itemName() not supported in where clause
     items = queryItemNames("select itemName() from mydomain where itemName() like 'B000%' order by itemName()")
     assert(items.size === 3)
-    assert(items === List("B00005JPLW", "B000SF3NGK", "B000T9886K"))
+    assert(items === Seq("B00005JPLW", "B000SF3NGK", "B000T9886K"))
     */
   }
 }

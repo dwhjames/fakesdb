@@ -78,9 +78,9 @@ class SelectParserTest {
   @Test
   def testFromItemName(): Unit = {
     domaina.getOrCreateItem("itema").put("a", "1", true)
-    val results = SelectParser.makeSelectEval("select itemName(), a from domaina").select(data)._1
+    val results = SelectParser.makeSelectEval("select itemName() from domaina").select(data)._1
     assertEquals(1, results.size)
-    assertEquals(("itema", List(("itemName()", "itema"), ("a", "1"))), results(0))
+    assertEquals(("itema", List.empty), results(0))
   }
 
   @Test

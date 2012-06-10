@@ -59,12 +59,13 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
   it should "parse output lists" in {
     implicit val parserToTest = outputList
     parsing("*") should equal (AllOutput)
-    parsing("itemName()") should equal (SomeOutput(List("itemName()")))
+    parsing("itemName()") should equal (ItemsOutput)
     parsing("count(*)") should equal (CountOutput)
     parsing("a") should equal (SomeOutput(List("a")))
     parsing("a, b") should equal (SomeOutput(List("a", "b")))
     parsing("a, b, c") should equal (SomeOutput(List("a", "b", "c")))
     
+    evaluating { parsing("") } should produce [Exception]
     evaluating { parsing("a,") } should produce [Exception]
   }
 
@@ -310,7 +311,7 @@ class QueryParserSpec extends FlatSpec with ShouldMatchers {
     (
       parsing("select itemName() from mydomain where itemName() like 'B000%' order by itemName()")
         should equal
-          (SelectQuery(SomeOutput(List("itemName()")), "mydomain",
+          (SelectQuery(ItemsOutput, "mydomain",
                        ExistsPredicate("itemName()", BinOpPredicate("like", "B000%")),
                        OrderBy("itemName()", "asc"), NoopLimit))
     )

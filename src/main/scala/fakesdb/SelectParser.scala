@@ -5,47 +5,48 @@ import scala.util.parsing.combinator.lexical.StdLexical
 import scala.util.parsing.input.CharArrayReader.EofCh
 
 case class SelectQuery(output: OutputClause, from: String, where: ItemPredicate, order: OrderClause, limit: LimitClause)  {
-  def select(data: Data, nextToken: Option[Int] = None): (List[(String, List[(String,String)])], Int, Boolean) = {
+  def select(data: Data, nextToken: Option[Int] = None): (Seq[(String, Seq[(String,String)])], Int, Boolean) = {
     val domain = data.getDomain(from).getOrElse(sys.error("Invalid from "+from))
     val drop = new SomeDrop(nextToken getOrElse 0)
-    val (items, hasMore) = limit.limit(drop.drop(order.sort(domain.getItems.filter(where).toList)))
-    (output.what(domain, items), items.length, hasMore)
+    val (items, numOfItems, hasMore) = limit.limit(drop.drop(order.sort(domain.getItems.filter(where).toSeq)))
+    (output.what(items), numOfItems, hasMore)
   }
 }
 
 sealed abstract class OutputClause {
-  type OutputList = List[(String, List[(String, String)])]
-  def what(domain: Domain, items: List[Item]): OutputList
+  type OutputSeq = Seq[(String, Seq[(String, String)])]
+  def what(items: Seq[Item]): OutputSeq
 
-  protected def flatAttrs(attrs: Iterator[Attribute]): List[(String, String)] = {
-    attrs.flatMap((a: Attribute) => a.getValues.map((v: String) => (a.name, v))).toList
+  protected def flatAttrs(attrs: Iterator[Attribute]): Seq[(String, String)] = {
+    attrs.flatMap((a: Attribute) => a.getValues.map((v: String) => (a.name, v))).toSeq
   }
 }
 
 case class SomeOutput(attrNames: List[String]) extends OutputClause {
-  def what(domain: Domain, items: List[Item]): OutputList = {
-    items.map((item: Item) => {
-      var i = (item.name, flatAttrs(item.getAttributes.filter((a: Attribute) => attrNames.contains(a.name))))
-      if (attrNames.contains("itemName()")) { // ugly
-        i = (i._1, ("itemName()", item.name) :: i._2)
-      }
-      i
-    }).filter(_._2.size > 0)
+  def what(items: Seq[Item]): OutputSeq = {
+    items.view.map((item: Item) =>
+      (item.name, flatAttrs(item.getAttributes.filter((a: Attribute) => attrNames.contains(a.name))))
+    ).filter(!_._2.isEmpty).force
+  }
+}
+
+case object ItemsOutput extends OutputClause {
+  def what(items: Seq[Item]): OutputSeq = {
+    items map { (item: Item) => (item.name, Seq.empty) }
   }
 }
 
 case object AllOutput extends OutputClause {
-  def what(domain: Domain, items: List[Item]): OutputList = {
-    items.map((item: Item) => {
+  def what(items: Seq[Item]): OutputSeq = {
+    items.view.map((item: Item) =>
       (item.name, flatAttrs(item.getAttributes))
-    }).filter(_._2.size > 0)
+    ).filter(!_._2.isEmpty).force
   }
 }
 
 case object CountOutput extends OutputClause {
-  def what(domain: Domain, items: List[Item]): OutputList = {
-    List(("Domain", List(("Count", items.size.toString))))
-  }
+  def what(items: Seq[Item]): OutputSeq =
+    Seq(("Domain", Seq(("Count", items.size.toString))))
 }
 
 sealed abstract class AttributePredicate extends Function1[String, Boolean] {
@@ -163,31 +164,34 @@ case class CompoundPredicate(pred1: ItemPredicate, op: String, pred2: ItemPredic
 }
 
 sealed abstract class LimitClause {
-  def limit(items: List[Item]): (List[Item], Boolean)
+  def limit(items: Seq[Item]): (Seq[Item], Int, Boolean)
 }
 
 case object NoopLimit extends LimitClause {
-  def limit(items: List[Item]) = (items, false)
+  def limit(items: Seq[Item]) = (items, items.length, false)
 }
 
 case class LimitBy(limit: Int) extends LimitClause {
-  def limit(items: List[Item]) = (items take limit, items.size > limit)
+  def limit(items: Seq[Item]) = {
+    val l = items.length
+    (items take limit, l, l > limit)
+  }
 }
 
 case class SomeDrop(count: Int) {
-  def drop(items: List[Item]) = items drop count
+  def drop(items: Seq[Item]) = items drop count
 }
 
 sealed abstract class OrderClause {
-  def sort(items: List[Item]): List[Item]
+  def sort(items: Seq[Item]): Seq[Item]
 }
 
 case object NoopOrder extends OrderClause {
-  def sort(items: List[Item]) = items
+  def sort(items: Seq[Item]) = items
 }
 
 case class OrderBy(name: String, way: String) extends OrderClause {
-  def sort(items: List[Item]): List[Item] = {
+  def sort(items: Seq[Item]): Seq[Item] = {
     val comp = (lv: String, rv: String) => way match {
       case "desc" => lv > rv
       case _ => lv < rv
@@ -302,9 +306,12 @@ object SelectParser extends StandardTokenParsers {
     )
 
   def outputList: Parser[OutputClause] =
-    ( "*"                ^^^ { AllOutput }
-    | "count(*)"         ^^^ { CountOutput }
-    | repsep(ident, ",") ^^  { attrNames => SomeOutput(attrNames) }
+    ( "*"                 ^^^ { AllOutput }
+    | "count(*)"          ^^^ { CountOutput }
+    | rep1sep(ident, ",")
+        ^^  { _ match {
+                case List("itemName()") => ItemsOutput
+                case attrs => SomeOutput(attrs) } }
     )
 
   def makeSelectEval(input: String): SelectQuery = {
