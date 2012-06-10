@@ -142,10 +142,8 @@ class QueryEvalSuite extends FunSuite with BeforeAndAfter {
     assert(items.size === 2)
     assert(items === Seq("0802131786", "0385333498"))
     
-    /* bug: itemName() not supported in where clause
     items = queryItemNames("select itemName() from mydomain where itemName() like 'B000%' order by itemName()")
     assert(items.size === 3)
     assert(items === Seq("B00005JPLW", "B000SF3NGK", "B000T9886K"))
-    */
   }
 }

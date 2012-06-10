@@ -124,10 +124,15 @@ case object NoopItemPredicate extends ItemPredicate {
 }
 
 case class ExistsPredicate(name: String, pred: AttributePredicate) extends ItemPredicate {
-  def apply(item: Item): Boolean = item.getAttribute(name) match {
-    case Some(a) => a.getValues.exists(pred)
-    case None    => false
-  }
+  val cachedPred =
+    if (name == "itemName()")
+      ((item: Item) => pred(item.name))
+    else
+      ((item: Item) => item.getAttribute(name) match {
+        case Some(a) => a.getValues.exists(pred)
+        case None    => false
+      })
+  def apply(item: Item): Boolean = cachedPred(item)
 }
 
 case class EveryPredicate(name: String, pred: AttributePredicate) extends ItemPredicate {
