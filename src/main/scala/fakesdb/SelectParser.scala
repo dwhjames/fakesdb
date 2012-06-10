@@ -4,16 +4,16 @@ import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 import scala.util.parsing.combinator.lexical.StdLexical
 import scala.util.parsing.input.CharArrayReader.EofCh
 
-case class SelectEval(output: OutputEval, from: String, where: WhereEval, order: OrderEval, limit: LimitEval)  {
+case class SelectQuery(output: OutputClause, from: String, where: ItemPredicate, order: OrderClause, limit: LimitClause)  {
   def select(data: Data, nextToken: Option[Int] = None): (List[(String, List[(String,String)])], Int, Boolean) = {
     val domain = data.getDomain(from).getOrElse(sys.error("Invalid from "+from))
     val drop = new SomeDrop(nextToken getOrElse 0)
-    val (items, hasMore) = limit.limit(drop.drop(order.sort(where.filter(domain, domain.getItems.toList))))
+    val (items, hasMore) = limit.limit(drop.drop(order.sort(domain.getItems.filter(where).toList)))
     (output.what(domain, items), items.length, hasMore)
   }
 }
 
-sealed abstract class OutputEval {
+sealed abstract class OutputClause {
   type OutputList = List[(String, List[(String, String)])]
   def what(domain: Domain, items: List[Item]): OutputList
 
@@ -22,7 +22,7 @@ sealed abstract class OutputEval {
   }
 }
 
-case class CompoundOutput(attrNames: List[String]) extends OutputEval {
+case class SomeOutput(attrNames: List[String]) extends OutputClause {
   def what(domain: Domain, items: List[Item]): OutputList = {
     items.map((item: Item) => {
       var i = (item.name, flatAttrs(item.getAttributes.filter((a: Attribute) => attrNames.contains(a.name))))
@@ -34,7 +34,7 @@ case class CompoundOutput(attrNames: List[String]) extends OutputEval {
   }
 }
 
-case object AllOutput extends OutputEval {
+case object AllOutput extends OutputClause {
   def what(domain: Domain, items: List[Item]): OutputList = {
     items.map((item: Item) => {
       (item.name, flatAttrs(item.getAttributes))
@@ -42,24 +42,24 @@ case object AllOutput extends OutputEval {
   }
 }
 
-case object CountOutput extends OutputEval {
+case object CountOutput extends OutputClause {
   def what(domain: Domain, items: List[Item]): OutputList = {
     List(("Domain", List(("Count", items.size.toString))))
   }
 }
 
-sealed abstract class Predicate extends Function1[String, Boolean] {
+sealed abstract class AttributePredicate extends Function1[String, Boolean] {
   /** Lifted logical and */
-  def &&(that: Predicate)= new Predicate {
-    def apply(v: String): Boolean = this(v) && that(v)
+  def &&(that: AttributePredicate)= new AttributePredicate {
+    def apply(v: String): Boolean = AttributePredicate.this(v) && that(v)
   }
   /** Lifted logical or */
-  def ||(that: Predicate) = new Predicate {
-    def apply(v: String): Boolean = this(v) || that(v)
+  def ||(that: AttributePredicate) = new AttributePredicate {
+    def apply(v: String): Boolean = AttributePredicate.this(v) || that(v)
   }
 }
 
-case class BinOpPredicate(op: String, value: String) extends Predicate {
+case class BinOpPredicate(op: String, value: String) extends AttributePredicate {
   import java.util.regex.Pattern
   val predicate: Function1[String, Boolean] = op match {
     case "="        => _ == value
@@ -91,70 +91,86 @@ case class BinOpPredicate(op: String, value: String) extends Predicate {
   def apply(v: String): Boolean = predicate(v)
 }
 
-case class RangePredicate(lower: String, upper: String) extends Predicate {
+case class RangePredicate(lower: String, upper: String) extends AttributePredicate {
   def apply(v: String): Boolean = (v >= lower) && (v <= upper)
 }
 
-case class ContainsPredicate(values: Set[String]) extends Predicate {
+case class ContainsPredicate(values: Set[String]) extends AttributePredicate {
   def apply(v: String): Boolean = values.contains(v)
 }
 
-sealed abstract class WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item]
-}
-
-case object NoopWhere extends WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item] = items
-}
-
-case class ExistsEval(name: String, pred: Predicate) extends WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item] = {
-    items.filter((i: Item) => i.getAttribute(name) match {
-      case Some(a) => a.getValues.exists(pred(_))
-      case None => false
-    }).toList
+sealed abstract class ItemPredicate extends Function1[Item, Boolean] {
+  /** Lifted logical and */
+  def &&(that: ItemPredicate): ItemPredicate = (this, that) match {
+    case (ExistsPredicate(name1, pred1), ExistsPredicate(name2, pred2)) if (name1 == name2) =>
+      new ExistsPredicate(name1, pred1 && pred2)
+    case _ => new ItemPredicate {
+      def apply(item: Item): Boolean = ItemPredicate.this(item) && that(item)
+    }
   }
-}
-
-case class EveryEval(name: String, pred: Predicate) extends WhereEval {
-  override def filter(domain: Domain, items: List[Item]): List[Item] = {
-    items.filter((i: Item) => i.getAttribute(name) match {
-      case Some(a) => a.getValues.forall(pred(_))
-      case None => false
-    }).toList
-  }
-}
-
-case class IsNullEval(name: String, isNull: Boolean) extends WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item] = {
-    items.filter((i: Item) => if (isNull) {
-      i.getAttribute(name).isEmpty
-    } else {
-      i.getAttribute(name).isDefined
-    }).toList
-  }
-}
-
-case class CompoundWhereEval(sp: WhereEval, op: String, rest: WhereEval) extends WhereEval {
-  def filter(domain: Domain, items: List[Item]): List[Item] = {
-    op match {
-      case "intersection" => sp.filter(domain, items).toList intersect rest.filter(domain, items).toList
-      case "and" => sp.filter(domain, items).toList intersect rest.filter(domain, items).toList
-      case "or" => sp.filter(domain, items).toList union rest.filter(domain, items).toList
-      case _ => sys.error("Invalid operator "+op)
+  /** Lifted logical or */
+  def ||(that: ItemPredicate): ItemPredicate = (this, that) match {
+    case (EveryPredicate(name1, pred1), EveryPredicate(name2, pred2)) if (name1 == name2) =>
+      new EveryPredicate(name1, pred1 || pred2)
+    case _ => new ItemPredicate {
+      def apply(item: Item): Boolean = ItemPredicate.this(item) || that(item)
     }
   }
 }
 
-sealed abstract class LimitEval {
+case object NoopItemPredicate extends ItemPredicate {
+  def apply(item: Item): Boolean = true
+}
+
+case class ExistsPredicate(name: String, pred: AttributePredicate) extends ItemPredicate {
+  def apply(item: Item): Boolean = item.getAttribute(name) match {
+    case Some(a) => a.getValues.exists(pred)
+    case None    => false
+  }
+}
+
+case class EveryPredicate(name: String, pred: AttributePredicate) extends ItemPredicate {
+  def apply(item: Item): Boolean = item.getAttribute(name) match {
+    case Some(a) => a.getValues.forall(pred)
+    case None    => false
+  }
+}
+
+case class IsNullItemPredicate(name: String, isNull: Boolean) extends ItemPredicate {
+  def apply(item: Item): Boolean =
+    if (isNull) item.getAttribute(name).isEmpty else item.getAttribute(name).isDefined
+}
+
+case class CompoundPredicate(pred1: ItemPredicate, op: String, pred2: ItemPredicate) extends ItemPredicate {
+  protected def combine(): ItemPredicate = {
+    val pred3 = pred1 match {
+      case cp: CompoundPredicate => cp.combine()
+      case _ => pred1
+    }
+    val pred4 = pred2 match {
+      case cp: CompoundPredicate => cp.combine()
+      case _ => pred2
+    }
+    op match {
+      case "and" => pred3 && pred4
+      case "or"  => pred3 || pred4
+      case "intersection" => new ItemPredicate {
+        def apply(item: Item) = pred3(item) && pred4(item)
+      }
+    }
+  }
+  def apply(item: Item): Boolean = combine()(item)
+}
+
+sealed abstract class LimitClause {
   def limit(items: List[Item]): (List[Item], Boolean)
 }
 
-case object NoopLimit extends LimitEval {
+case object NoopLimit extends LimitClause {
   def limit(items: List[Item]) = (items, false)
 }
 
-case class SomeLimit(limit: Int) extends LimitEval {
+case class LimitBy(limit: Int) extends LimitClause {
   def limit(items: List[Item]) = (items take limit, items.size > limit)
 }
 
@@ -162,15 +178,15 @@ case class SomeDrop(count: Int) {
   def drop(items: List[Item]) = items drop count
 }
 
-sealed abstract class OrderEval {
+sealed abstract class OrderClause {
   def sort(items: List[Item]): List[Item]
 }
 
-case object NoopOrder extends OrderEval {
+case object NoopOrder extends OrderClause {
   def sort(items: List[Item]) = items
 }
 
-case class SimpleOrderEval(name: String, way: String) extends OrderEval {
+case class OrderBy(name: String, way: String) extends OrderClause {
   def sort(items: List[Item]): List[Item] = {
     val comp = (lv: String, rv: String) => way match {
       case "desc" => lv > rv
@@ -236,47 +252,47 @@ object SelectParser extends StandardTokenParsers {
     ~! whereClause
     ~! order
     ~! limit
-         ^^ { case ol ~ i ~ w ~ o ~ l => SelectEval(ol, i, w, o, l) }
+         ^^ { case ol ~ i ~ w ~ o ~ l => SelectQuery(ol, i, w, o, l) }
     )
 
-  def order: Parser[OrderEval] =
+  def order: Parser[OrderClause] =
     ( "order" ~> "by" ~> ident ~! opt("asc" | "desc")
-        ^^ { case i ~ way => SimpleOrderEval(i, way.getOrElse("asc")) }
+        ^^ { case i ~ way => OrderBy(i, way.getOrElse("asc")) }
     | success(NoopOrder)
     )
 
-  def limit: Parser[LimitEval] =
-    ( "limit" ~> numericLit ^^ { num => SomeLimit(num.toInt) }
+  def limit: Parser[LimitClause] =
+    ( "limit" ~> numericLit ^^ { num => LimitBy(num.toInt) }
     | success(NoopLimit)
     )
 
-  def whereClause: Parser[WhereEval] =
+  def whereClause: Parser[ItemPredicate] =
     ( "where" ~> where
-    | success(NoopWhere)
+    | success(NoopItemPredicate)
     )
 
   def setOp = "and" | "or" | "intersection"
 
-  def where: Parser[WhereEval] =
+  def where: Parser[ItemPredicate] =
     ( simplePredicate ~! opt(setOp ~! where)
         ^^ { case sp ~ opt_rest => opt_rest match {
-               case Some(op ~ rp) => CompoundWhereEval(sp, op, rp)
+               case Some(op ~ rp) => CompoundPredicate(sp, op, rp)
                case None          => sp } } )
 
   def op = "=" | "!=" | ">" | "<" | ">=" | "<=" | "like" | "not" ~ "like" ^^^ { "not-like" }
 
-  def simplePredicate: Parser[WhereEval] =
+  def simplePredicate: Parser[ItemPredicate] =
     ( "(" ~> where <~ ")"
     | ("every" ~> "(" ~> ident <~ ")") ~! comparisonOp
-        ^^ { case i ~ p => EveryEval(i, p)}
-    | ident ~! ("is" ~> ( "null"          ^^^ { IsNullEval(_: String, true) }
-                        | "not" ~! "null" ^^^ { IsNullEval(_: String, false) }
+        ^^ { case i ~ p => EveryPredicate(i, p)}
+    | ident ~! ("is" ~> ( "null"          ^^^ { IsNullItemPredicate(_: String, true) }
+                        | "not" ~! "null" ^^^ { IsNullItemPredicate(_: String, false) }
                         )
-               | comparisonOp ^^ { pred => ExistsEval(_:String, pred) }
+               | comparisonOp ^^ { pred => ExistsPredicate(_:String, pred) }
                ) ^^ { case i ~ f => f(i)}
     )
 
-  def comparisonOp: Parser[Predicate] =
+  def comparisonOp: Parser[AttributePredicate] =
     ( ("between" ~> stringLit) ~! ("and" ~> stringLit)
         ^^ { case lower ~ upper => RangePredicate(lower, upper) }
     | ("in" ~> "(" ~> repsep(stringLit, ",") <~ ")")
@@ -285,13 +301,13 @@ object SelectParser extends StandardTokenParsers {
         ^^ { case o ~ v => BinOpPredicate(o, v) }
     )
 
-  def outputList: Parser[OutputEval] =
+  def outputList: Parser[OutputClause] =
     ( "*"                ^^^ { AllOutput }
     | "count(*)"         ^^^ { CountOutput }
-    | repsep(ident, ",") ^^  { attrNames => CompoundOutput(attrNames) }
+    | repsep(ident, ",") ^^  { attrNames => SomeOutput(attrNames) }
     )
 
-  def makeSelectEval(input: String): SelectEval = {
+  def makeSelectEval(input: String): SelectQuery = {
     val tokens = new lexical.Scanner(input)
     phrase(expr)(tokens) match {
       case Success(selectEval, _) => selectEval

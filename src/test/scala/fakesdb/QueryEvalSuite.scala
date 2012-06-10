@@ -81,11 +81,9 @@ class QueryEvalSuite extends FunSuite with BeforeAndAfter {
     assert(items.size === 4)
     assert(items === List("1579124585", "B000T9886K", "B00005JPLW", "B000SF3NGK"))
     
-    /* or operation is incorrect (implemented as sequence union)
     items = queryItemNames("select * from mydomain where Rating = '***' or Rating = '*****'")
     assert(items.size === 3)
     assert(items === List("0385333498", "B00005JPLW", "B000SF3NGK"))
-    */
     
     items = queryItemNames("select * from mydomain where (Year > '1950' and Year < '1960') or Year like '193%' or Year = '2007'")
     assert(items.size === 4)
@@ -94,18 +92,14 @@ class QueryEvalSuite extends FunSuite with BeforeAndAfter {
   
   test("Queries on Attributes with Multiple Values") {
     
-    /* or operation is incorrect (implemented as sequence union)
-    items = queryItemNames("select * from mydomain where Rating = '4 stars' or Rating = '****'")
+    var items = queryItemNames("select * from mydomain where Rating = '4 stars' or Rating = '****'")
     assert(items.size === 3)
-    assert(items === List("1579124585", "0802131786", "B000T9886K"))
-    */
+    assert(items === List("0802131786", "1579124585", "B000T9886K"))
     
-    /* and operation is incorrect (implemented as sequence intersection)
     items = queryItemNames("select * from mydomain where Keyword = 'Book' and Keyword = 'Hardcover'")
     assert(items.size === 0)
-    */
     
-    var items = queryItemNames("select * from mydomain where every(Keyword) in ('Book', 'Paperback')")
+    items = queryItemNames("select * from mydomain where every(Keyword) in ('Book', 'Paperback')")
     assert(items.size === 2)
     assert(items === List("0385333498", "0802131786"))
   }

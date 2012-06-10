@@ -293,7 +293,7 @@ class SelectParserTest {
     domaina.getOrCreateItem("itema").put("a", "1", true)
     domaina.getOrCreateItem("itema").put("a", "2", false)
     val results = SelectParser.makeSelectEval("select * from domaina where a = '1' and a = '2'").select(data)._1
-    assertEquals(1, results.size) // FAIL
+    assertEquals(0, results.size)
   }
 
   @Test
