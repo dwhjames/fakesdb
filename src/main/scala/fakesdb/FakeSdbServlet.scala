@@ -9,13 +9,11 @@ class FakeSdbServlet extends HttpServlet {
 
   override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = synchronized {
     val params = Params(request)
-    if (!params.contains("Action")) {
-      response.setStatus(404)
-      return
-    }
 
     var xml = ""
     try {
+      if (!params.contains("Action"))
+        throw new SDBException(400, "MissingAction", "No action was supplied with this request.")
       val action = params("Action") match {
         case "CreateDomain" => new CreateDomain(data)
         case "DeleteDomain" => new DeleteDomain(data)
@@ -27,7 +25,8 @@ class FakeSdbServlet extends HttpServlet {
         case "BatchDeleteAttributes" => new BatchDeleteAttributes(data)
         case "DeleteAttributes" => new DeleteAttributes(data)
         case "Select" => new Select(data)
-        case other => throw new InvalidActionException(other)
+        case other =>
+          throw new SDBException(400, "InvalidAction", "The action %s is not valid for this web service.".format(other))
       }
       xml = action.handle(params).toString
     } catch {
@@ -51,13 +50,27 @@ class FakeSdbServlet extends HttpServlet {
     }
 
     <Response>
-      <Errors><Error><Code>{xmlCode}</Code><Message>{t.getMessage}</Message><BoxUsage>0</BoxUsage></Error></Errors>
+      <Errors>
+        <Error>
+          <Code>{xmlCode}</Code>
+          <Message>{t.getMessage}</Message>
+          <BoxUsage>0</BoxUsage>
+        </Error>
+      </Errors>
       <RequestId>0</RequestId>
     </Response>
   }
 
   override def doPost(request: HttpServletRequest, response: HttpServletResponse): Unit = doGet(request, response)
 
-  class InvalidActionException(action: String)
-    extends SDBException(400, "InvalidAction", "The action %s is not valid for this web service.".format(action))
+  override def doPut(request: HttpServletRequest, response: HttpServletResponse): Unit = unsupportedHttpVerb(response, "PUT")
+
+  override def doDelete(request: HttpServletRequest, response: HttpServletResponse): Unit = unsupportedHttpVerb(response, "DELETE")
+
+  private def unsupportedHttpVerb(response: HttpServletResponse, verb: String): Unit = {
+    response.setStatus(400)
+    response.setContentType("text/xml")
+    response.getWriter.write(
+      toXML(new SDBException(400, "UnsupportedHttpVerb", "The requested HTTP verb is not supported: %s.".format(verb))).toString)
+  }
 }
