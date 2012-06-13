@@ -6,7 +6,7 @@ import scala.util.parsing.input.CharArrayReader.EofCh
 
 case class SelectQuery(output: OutputClause, from: String, where: ItemPredicate, order: OrderClause, limit: LimitClause)  {
   def select(data: Data, nextToken: Option[Int] = None): (Seq[(String, Seq[(String,String)])], Int, Boolean) = {
-    val domain = data.getDomain(from).getOrElse(sys.error("Invalid from "+from))
+    val domain = data.getDomain(from)
     val drop = new SomeDrop(nextToken getOrElse 0)
     val (items, numOfItems, hasMore) = limit.limit(drop.drop(order.sort(domain.getItems.filter(where).toSeq)))
     (output.what(items), numOfItems, hasMore)

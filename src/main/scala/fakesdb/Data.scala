@@ -1,20 +1,30 @@
 package fakesdb
 
-import fakesdb.actions.NumberItemAttributesExceededException
-import fakesdb.actions.EmptyAttributeNameException
-import fakesdb.actions.InvalidParameterValue
-import scala.collection.mutable.LinkedHashSet
-import scala.collection.mutable.LinkedHashMap
+import fakesdb.actions.{SDBException, NumberItemAttributesExceededException,
+                        EmptyAttributeNameException, InvalidParameterValue}
+import java.util.regex.Pattern
+import scala.collection.mutable.{LinkedHashSet, LinkedHashMap}
 
 class Data {
   private val domains = new LinkedHashMap[String, Domain]()
+  private val domainNamePat = Pattern.compile("[a-zA-Z0-9_\\-\\.]{3,255}")
   def getDomains(): Iterator[Domain] = domains.valuesIterator
-  def getDomain(name: String): Option[Domain] = domains.get(name)
+  def getDomain(name: String): Domain =
+    domains.getOrElse(name, throw new SDBException(400, "NoSuchDomain", "The specified domain does not exist."))
   def getOrCreateDomain(name: String): Domain = {
-    if (!name.matches("[a-zA-Z0-9_\\-\\.]{3,255}")) {
-      throw new InvalidParameterValue("Value (\"%s\") for parameter DomainName is invalid.".format(name))
-    }
-    domains.getOrElseUpdate(name, new Domain(name))
+    if (!domainNamePat.matcher(name).matches())
+      throw new InvalidParameterValue("Value (%s) for parameter DomainName is invalid.".format(name))
+    else
+      domains.get(name) match {
+        case Some(d) => d
+        case None =>
+        if (domains.size < 250) {
+          val d = new Domain(name)
+          domains.put(name, d)
+          d
+        } else
+          throw new SDBException(409, "NumberDomainsExceeded", "The domain limit was exceeded.")
+      }
   }
   def deleteDomain(domain: Domain): Unit = domains.remove(domain.name)
   def flush(): Unit = domains.clear
