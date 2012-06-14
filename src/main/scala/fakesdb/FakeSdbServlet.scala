@@ -8,7 +8,7 @@ class FakeSdbServlet extends HttpServlet {
   val data = new Data
 
   override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = synchronized {
-    val params = Params(request)
+    val params = parseParams(request)
 
     var xml = ""
     try {
@@ -41,6 +41,16 @@ class FakeSdbServlet extends HttpServlet {
 
     response.setContentType("text/xml")
     response.getWriter.write(xml)
+  }
+
+  private def parseParams(request: HttpServletRequest): Params = {
+    val p = new scala.collection.mutable.HashMap[String,String]
+    val i = request.getParameterMap.asInstanceOf[java.util.Map[String, Array[String]]].entrySet.iterator
+    while (i.hasNext) {
+      val e = i.next
+      p.update(e.getKey(), e.getValue()(0))
+    }
+    p.toMap
   }
 
   private def toXML(t: Throwable) = {
