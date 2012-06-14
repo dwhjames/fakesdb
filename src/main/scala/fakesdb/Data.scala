@@ -8,6 +8,7 @@ import scala.collection.mutable.{LinkedHashSet, LinkedHashMap}
 class Data {
   private val domains = new LinkedHashMap[String, Domain]()
   private val domainNamePat = Pattern.compile("[a-zA-Z0-9_\\-\\.]{3,255}")
+  def size: Int = domains.size
   def getDomains(): Iterator[Domain] = domains.valuesIterator
   def getDomain(name: String): Domain =
     domains.getOrElse(name, throw new SDBException(400, "NoSuchDomain", "The specified domain does not exist."))

@@ -8,6 +8,9 @@ class SDBException(val httpStatus: Int, val xmlCode: String, val message: String
 class EmptyAttributeNameException
   extends SDBException(400, "InvalidParameterValue", "Value () for parameter Name is invalid. The empty string is an illegal attribute name")
 
+class InvalidNextTokenException
+  extends SDBException(400, "InvalidNextToken", "The specified next token is not valid.")
+
 class InvalidParameterValue(message: String)
   extends SDBException(400, "InvalidParameterValue", message)
 
