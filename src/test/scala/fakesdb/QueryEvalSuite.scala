@@ -3,14 +3,12 @@ package fakesdb
 import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfter
 
-class QueryEvalSuite extends FunSuite with BeforeAndAfter {
+class QueryEvalSuite extends FunSuite {
   
   val data = new Data
-  var domain: Domain = _
   
-  before {
-    data.flush()
-    domain = data.getOrCreateDomain("mydomain")
+  {
+    val domain = data.getOrCreateDomain("mydomain")
     
     domain.getOrCreateItem("0385333498").put("Title", "The Sirens of Titan", false)
     domain.getOrCreateItem("0385333498").put("Author", "Kurt Vonnegut", false)
