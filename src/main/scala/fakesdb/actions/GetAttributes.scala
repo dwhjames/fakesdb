@@ -1,12 +1,12 @@
 package fakesdb.actions
 
 import scala.collection.mutable.ListBuffer
-import scala.xml.NodeSeq
+import scala.xml
 import fakesdb._
 
 class GetAttributes(data: Data) extends Action(data) {
 
-  def handle(params: Params): NodeSeq = {
+  def handle(params: Params): xml.Node = {
     val domain = parseDomain(params)
     val itemName = params.getOrElse("ItemName", throw new MissingItemNameException)
     val items = domain.getItem(itemName) match {

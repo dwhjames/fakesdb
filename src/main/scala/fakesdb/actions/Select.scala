@@ -1,11 +1,11 @@
 package fakesdb.actions
 
-import scala.xml.NodeSeq
+import scala.xml
 import fakesdb._
 
 class Select(data: Data) extends Action(data) {
 
-  override def handle(params: Params): NodeSeq = {
+  override def handle(params: Params): xml.Node = {
     val nextToken = params.get("NextToken") map { _.toInt }
     val itemsData = params.get("SelectExpression") match {
       case Some(s) => val se = SelectParser.makeSelectEval(s) ; se.select(data, nextToken)

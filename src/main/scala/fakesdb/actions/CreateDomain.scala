@@ -1,11 +1,11 @@
 package fakesdb.actions
 
-import scala.xml.NodeSeq
+import scala.xml
 import fakesdb._
 
 class CreateDomain(data: Data) extends Action(data) {
 
-  def handle(params: Params): NodeSeq = {
+  def handle(params: Params): xml.Node = {
     val domainName = params.getOrElse("DomainName", throw new MissingDomainNameException)
     if (domainName == "_flush") {
       data.flush() // The special one

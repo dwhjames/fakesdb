@@ -1,11 +1,11 @@
 package fakesdb.actions
 
-import scala.xml.NodeSeq
+import scala.xml
 import fakesdb._
 
 abstract class Action(data: Data) {
 
-  def handle(params: Params): NodeSeq
+  def handle(params: Params): xml.Node
 
   protected def responseMetaData() = {
     <ResponseMetadata><RequestId>{requestId}</RequestId><BoxUsage>0</BoxUsage></ResponseMetadata>

@@ -1,11 +1,11 @@
 package fakesdb.actions
 
-import scala.xml.NodeSeq
+import scala.xml
 import fakesdb._
 
 class PutAttributes(data: Data) extends Action(data) with ConditionalChecking {
 
-  def handle(params: Params): NodeSeq = {
+  def handle(params: Params): xml.Node = {
     val domain = parseDomain(params)
     val itemName = params.getOrElse("ItemName", throw new MissingItemNameException)
     val item = domain.getOrCreateItem(itemName)

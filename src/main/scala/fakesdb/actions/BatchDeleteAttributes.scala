@@ -2,12 +2,12 @@ package fakesdb.actions
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
-import scala.xml.NodeSeq
+import scala.xml
 import fakesdb._
 
 class BatchDeleteAttributes(data: Data) extends Action(data) {
 
-  def handle(params: Params): NodeSeq = {
+  def handle(params: Params): xml.Node = {
     val domain = parseDomain(params)
     discoverAttributes(params).delete(domain)
     <BatchDeleteAttributesResponse xmlns={namespace}>

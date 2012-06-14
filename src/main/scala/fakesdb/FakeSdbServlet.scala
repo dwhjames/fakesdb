@@ -1,17 +1,17 @@
 package fakesdb
 
-import javax.servlet.http._
 import fakesdb.actions._
+import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+import scala.xml
+
 
 class FakeSdbServlet extends HttpServlet {
 
   val data = new Data
 
   override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = synchronized {
-    val params = parseParams(request)
-
-    var xml = ""
     try {
+      val params = parseParams(request)
       if (!params.contains("Action"))
         throw new SDBException(400, "MissingAction", "No action was supplied with this request.")
       val action = params("Action") match {
@@ -28,19 +28,16 @@ class FakeSdbServlet extends HttpServlet {
         case other =>
           throw new SDBException(400, "InvalidAction", "The action %s is not valid for this web service.".format(other))
       }
-      xml = action.handle(params).toString
+      serveXML(response, action.handle(params))
     } catch {
       case e => {
-        xml = toXML(e).toString
         response.setStatus(e match {
           case se: SDBException => se.httpStatus
           case _ => 400
         })
+        serveXML(response, toXML(e))
       }
     }
-
-    response.setContentType("text/xml")
-    response.getWriter.write(xml)
   }
 
   private def parseParams(request: HttpServletRequest): Params = {
@@ -53,7 +50,7 @@ class FakeSdbServlet extends HttpServlet {
     p.toMap
   }
 
-  private def toXML(t: Throwable) = {
+  private def toXML(t: Throwable): xml.Node = {
     val xmlCode = t match {
       case se: SDBException => se.xmlCode
       case _ => "InternalError"
@@ -69,6 +66,11 @@ class FakeSdbServlet extends HttpServlet {
       </Errors>
       <RequestId>0</RequestId>
     </Response>
+  }
+
+  private def serveXML(response: HttpServletResponse, xmlNode: xml.Node): Unit = {
+    response.setContentType("text/xml")
+    xml.XML.write(response.getWriter, xmlNode, "utf-8", true, null)
   }
 
   override def doPost(request: HttpServletRequest, response: HttpServletResponse): Unit = doGet(request, response)

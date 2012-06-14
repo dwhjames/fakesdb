@@ -1,11 +1,11 @@
 package fakesdb.actions
 
-import scala.xml.NodeSeq
+import scala.xml
 import fakesdb._
 
 class DomainMetadata(data: Data) extends Action(data) {
   
-  def handle(params: Params): NodeSeq = {
+  def handle(params: Params): xml.Node = {
     def sum(list: List[Int]) = list.foldLeft(0)(_ + _)
     val allItems = data.getDomains.flatMap(_.getItems).toList
     val allAttrs = allItems.flatMap(_.getAttributes.toList)
