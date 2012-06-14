@@ -18,7 +18,7 @@ class Data {
       domains.get(name) match {
         case Some(d) => d
         case None =>
-        if (domains.size < 250) {
+        if (domains.size < Limits.MaxNumOfDomains) {
           val d = new Domain(name)
           domains.put(name, d)
           d
@@ -55,7 +55,7 @@ class Item(val name: String) {
     // the limit is 256 (name,value) unique pairs, so make (name,value) pairs and then combine them 
     val existingPairs = attributes.toList.flatMap((e) => { e._2.values.map((v) => (e._1, v)) })
     val newPairs = values.map((v) => (name, v))
-    if ((existingPairs ++ newPairs).toSet.size > 256) {
+    if ((existingPairs ++ newPairs).toSet.size > Limits.MaxNameValPairsPerItem) {
       throw new NumberItemAttributesExceededException
     }
     if (name == "") {

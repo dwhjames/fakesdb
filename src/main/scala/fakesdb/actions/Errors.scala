@@ -1,5 +1,7 @@
 package fakesdb.actions
 
+import fakesdb.Limits
+
 // http://docs.amazonwebservices.com/AmazonSimpleDB/latest/DeveloperGuide/index.html?APIError.html
 class SDBException(val httpStatus: Int, val xmlCode: String, val message: String) extends RuntimeException(message)
 
@@ -11,7 +13,7 @@ class InvalidParameterValue(message: String)
 
 object InvalidParameterValue {
   def failIfOver1024(name: String, value: String): Unit = {
-    if (value.getBytes.size > 1024) {
+    if (value.getBytes.size > Limits.ParamValMaxLen) {
       throw new InvalidParameterValue("Value (\"%s\") for parameter %s is invalid. Value exceeds maximum length of 1024.".format(value, name));
     }
   }
