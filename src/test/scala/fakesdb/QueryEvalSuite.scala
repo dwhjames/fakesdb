@@ -8,45 +8,45 @@ class QueryEvalSuite extends FunSuite {
   val data = new Data
   
   {
-    val domain = data.getOrCreateDomain("mydomain")
-    
-    domain.getOrCreateItem("0385333498").put("Title", "The Sirens of Titan", false)
-    domain.getOrCreateItem("0385333498").put("Author", "Kurt Vonnegut", false)
-    domain.getOrCreateItem("0385333498").put("Year", "1959", false)
-    domain.getOrCreateItem("0385333498").put("Pages", "00336", false)
-    domain.getOrCreateItem("0385333498").put("Keyword", Seq("Book", "Paperback"), false)
-    domain.getOrCreateItem("0385333498").put("Rating", Seq("*****", "5 stars", "Excellent"), false)
-    
-    domain.getOrCreateItem("0802131786").put("Title", "Tropic of Cancer", false)
-    domain.getOrCreateItem("0802131786").put("Author", "Henry Miller", false)
-    domain.getOrCreateItem("0802131786").put("Year", "1934", false)
-    domain.getOrCreateItem("0802131786").put("Pages", "00318", false)
-    domain.getOrCreateItem("0802131786").put("Keyword", "Book", false)
-    domain.getOrCreateItem("0802131786").put("Rating", "****", false)
-    
-    domain.getOrCreateItem("1579124585").put("Title", "The Right Stuff", false)
-    domain.getOrCreateItem("1579124585").put("Author", "Tom Wolfe", false)
-    domain.getOrCreateItem("1579124585").put("Year", "1979", false)
-    domain.getOrCreateItem("1579124585").put("Pages", "00304", false)
-    domain.getOrCreateItem("1579124585").put("Keyword", Seq("Book", "Hardcover", "American"), false)
-    domain.getOrCreateItem("1579124585").put("Rating", Seq("****", "4 stars"), false)
-    
-    domain.getOrCreateItem("B000T9886K").put("Title", "In Between", false)
-    domain.getOrCreateItem("B000T9886K").put("Author", "Paul Van Dyk", false)
-    domain.getOrCreateItem("B000T9886K").put("Year", "2007", false)
-    domain.getOrCreateItem("B000T9886K").put("Keyword", Seq("CD", "Trance"), false)
-    domain.getOrCreateItem("B000T9886K").put("Rating", "4 stars", false)
-    
-    domain.getOrCreateItem("B00005JPLW").put("Title", "300", false)
-    domain.getOrCreateItem("B00005JPLW").put("Author", "Zack Snyder", false)
-    domain.getOrCreateItem("B00005JPLW").put("Year", "2007", false)
-    domain.getOrCreateItem("B00005JPLW").put("Keyword", Seq("DVD", "Action", "Frank Miller"), false)
-    domain.getOrCreateItem("B00005JPLW").put("Rating", Seq("***", "3 stars", "Not bad"), false)
-    
-    domain.getOrCreateItem("B000SF3NGK").put("Title", "Heaven's Gonna Burn Your Eyes", false)
-    domain.getOrCreateItem("B000SF3NGK").put("Author", "Thievery Corporation", false)
-    domain.getOrCreateItem("B000SF3NGK").put("Year", "2002", false)
-    domain.getOrCreateItem("B000SF3NGK").put("Rating", "*****", false)
+    val domain = data.getOrCreate("mydomain")
+
+    domain.getOrCreate("0385333498").put("Title", "The Sirens of Titan", false)
+    domain.getOrCreate("0385333498").put("Author", "Kurt Vonnegut", false)
+    domain.getOrCreate("0385333498").put("Year", "1959", false)
+    domain.getOrCreate("0385333498").put("Pages", "00336", false)
+    domain.getOrCreate("0385333498").put("Keyword", Seq("Book", "Paperback"), false)
+    domain.getOrCreate("0385333498").put("Rating", Seq("*****", "5 stars", "Excellent"), false)
+
+    domain.getOrCreate("0802131786").put("Title", "Tropic of Cancer", false)
+    domain.getOrCreate("0802131786").put("Author", "Henry Miller", false)
+    domain.getOrCreate("0802131786").put("Year", "1934", false)
+    domain.getOrCreate("0802131786").put("Pages", "00318", false)
+    domain.getOrCreate("0802131786").put("Keyword", "Book", false)
+    domain.getOrCreate("0802131786").put("Rating", "****", false)
+
+    domain.getOrCreate("1579124585").put("Title", "The Right Stuff", false)
+    domain.getOrCreate("1579124585").put("Author", "Tom Wolfe", false)
+    domain.getOrCreate("1579124585").put("Year", "1979", false)
+    domain.getOrCreate("1579124585").put("Pages", "00304", false)
+    domain.getOrCreate("1579124585").put("Keyword", Seq("Book", "Hardcover", "American"), false)
+    domain.getOrCreate("1579124585").put("Rating", Seq("****", "4 stars"), false)
+
+    domain.getOrCreate("B000T9886K").put("Title", "In Between", false)
+    domain.getOrCreate("B000T9886K").put("Author", "Paul Van Dyk", false)
+    domain.getOrCreate("B000T9886K").put("Year", "2007", false)
+    domain.getOrCreate("B000T9886K").put("Keyword", Seq("CD", "Trance"), false)
+    domain.getOrCreate("B000T9886K").put("Rating", "4 stars", false)
+
+    domain.getOrCreate("B00005JPLW").put("Title", "300", false)
+    domain.getOrCreate("B00005JPLW").put("Author", "Zack Snyder", false)
+    domain.getOrCreate("B00005JPLW").put("Year", "2007", false)
+    domain.getOrCreate("B00005JPLW").put("Keyword", Seq("DVD", "Action", "Frank Miller"), false)
+    domain.getOrCreate("B00005JPLW").put("Rating", Seq("***", "3 stars", "Not bad"), false)
+
+    domain.getOrCreate("B000SF3NGK").put("Title", "Heaven's Gonna Burn Your Eyes", false)
+    domain.getOrCreate("B000SF3NGK").put("Author", "Thievery Corporation", false)
+    domain.getOrCreate("B000SF3NGK").put("Year", "2002", false)
+    domain.getOrCreate("B000SF3NGK").put("Rating", "*****", false)
   }
   
   private def queryItemNames(query: String): Seq[String] =

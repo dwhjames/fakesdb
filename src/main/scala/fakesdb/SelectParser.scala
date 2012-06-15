@@ -6,9 +6,9 @@ import scala.util.parsing.input.CharArrayReader.EofCh
 
 case class SelectQuery(output: OutputClause, from: String, where: ItemPredicate, order: OrderClause, limit: LimitClause)  {
   def select(data: Data, nextToken: Option[Int] = None): (Seq[(String, Seq[(String,String)])], Int, Boolean) = {
-    val domain = data.getDomain(from)
+    val domain = data.get(from)
     val drop = new SomeDrop(nextToken getOrElse 0)
-    val (items, numOfItems, hasMore) = limit.limit(drop.drop(order.sort(domain.getItems.filter(where).toSeq)))
+    val (items, numOfItems, hasMore) = limit.limit(drop.drop(order.sort(domain.iterator.filter(where).toSeq)))
     (output.what(items), numOfItems, hasMore)
   }
 }
@@ -18,14 +18,14 @@ sealed abstract class OutputClause {
   def what(items: Seq[Item]): OutputSeq
 
   protected def flatAttrs(attrs: Iterator[Attribute]): Seq[(String, String)] = {
-    attrs.flatMap((a: Attribute) => a.getValues.map((v: String) => (a.name, v))).toSeq
+    attrs.flatMap((a: Attribute) => a.iterator.map((v: String) => (a.name, v))).toSeq
   }
 }
 
 case class SomeOutput(attrNames: List[String]) extends OutputClause {
   def what(items: Seq[Item]): OutputSeq = {
     items.view.map((item: Item) =>
-      (item.name, flatAttrs(item.getAttributes.filter((a: Attribute) => attrNames.contains(a.name))))
+      (item.name, flatAttrs(item.iterator.filter((a: Attribute) => attrNames.contains(a.name))))
     ).filter(!_._2.isEmpty).force
   }
 }
@@ -39,7 +39,7 @@ case object ItemsOutput extends OutputClause {
 case object AllOutput extends OutputClause {
   def what(items: Seq[Item]): OutputSeq = {
     items.view.map((item: Item) =>
-      (item.name, flatAttrs(item.getAttributes))
+      (item.name, flatAttrs(item.iterator))
     ).filter(!_._2.isEmpty).force
   }
 }
@@ -123,28 +123,21 @@ case object NoopItemPredicate extends ItemPredicate {
   def apply(item: Item): Boolean = true
 }
 
-case class ExistsPredicate(name: String, pred: AttributePredicate) extends ItemPredicate {
+case class ExistsPredicate(attrName: String, pred: AttributePredicate) extends ItemPredicate {
   val cachedPred =
-    if (name == "itemName()")
+    if (attrName == "itemName()")
       ((item: Item) => pred(item.name))
     else
-      ((item: Item) => item.getAttribute(name) match {
-        case Some(a) => a.getValues.exists(pred)
-        case None    => false
-      })
+      ((item: Item) => item.get(attrName) exists { attr => attr.iterator.exists(pred) })
   def apply(item: Item): Boolean = cachedPred(item)
 }
 
-case class EveryPredicate(name: String, pred: AttributePredicate) extends ItemPredicate {
-  def apply(item: Item): Boolean = item.getAttribute(name) match {
-    case Some(a) => a.getValues.forall(pred)
-    case None    => false
-  }
+case class EveryPredicate(attrName: String, pred: AttributePredicate) extends ItemPredicate {
+  def apply(item: Item): Boolean = item.get(attrName) exists { attr => attr.iterator.forall(pred) }
 }
 
-case class IsNullItemPredicate(name: String, isNull: Boolean) extends ItemPredicate {
-  def apply(item: Item): Boolean =
-    if (isNull) item.getAttribute(name).isEmpty else item.getAttribute(name).isDefined
+case class IsNullItemPredicate(attrName: String, isNull: Boolean) extends ItemPredicate {
+  def apply(item: Item): Boolean = isNull == item.get(attrName).isEmpty
 }
 
 case class CompoundPredicate(pred1: ItemPredicate, op: String, pred2: ItemPredicate) extends ItemPredicate {
@@ -195,7 +188,7 @@ case object NoopOrder extends OrderClause {
   def sort(items: Seq[Item]) = items
 }
 
-case class OrderBy(name: String, way: String) extends OrderClause {
+case class OrderBy(attrName: String, way: String) extends OrderClause {
   def sort(items: Seq[Item]): Seq[Item] = {
     val comp = (lv: String, rv: String) => way match {
       case "desc" => lv > rv
@@ -206,13 +199,10 @@ case class OrderBy(name: String, way: String) extends OrderClause {
     })
   }
   def resolveValue(item: Item) = {
-    if (name == "itemName()") {
+    if (attrName == "itemName()") {
       item.name
     } else {
-      item.getAttribute(name) match {
-        case Some(a) => a.getValues.next
-        case None => "" // default value
-      }
+      item.get(attrName).map(attr => attr.iterator.next).getOrElse("")
     }
   }
 }

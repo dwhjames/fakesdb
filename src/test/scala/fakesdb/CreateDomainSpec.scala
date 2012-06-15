@@ -21,7 +21,7 @@ class CreateDomainSpec extends FlatSpec with ShouldMatchers {
 
   it should "throw an exception when the domain limit has been exceeded" in {
     val d = new Data
-    for (i <- 1 to Limits.MaxNumOfDomains) d.getOrCreateDomain("abc"+i)
+    for (i <- 1 to Limits.MaxNumOfDomains) d.getOrCreate("abc"+i)
     val thrown = evaluating { new CreateDomain(d).handle(Map("DomainName" -> "abc%s".format(Limits.MaxNumOfDomains + 1)))} should produce [SDBException]
     thrown.xmlCode should equal ("NumberDomainsExceeded")
   }

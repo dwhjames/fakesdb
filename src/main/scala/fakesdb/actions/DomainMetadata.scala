@@ -7,9 +7,9 @@ class DomainMetadata(data: Data) extends Action(data) {
   
   def handle(params: Params): xml.Node = {
     def sum(list: List[Int]) = list.foldLeft(0)(_ + _)
-    val allItems = data.getDomains.flatMap(_.getItems).toList
-    val allAttrs = allItems.flatMap(_.getAttributes.toList)
-    val allValues = allAttrs.flatMap(_.getValues.toList)
+    val allItems = data.iterator.flatMap(_.iterator).toList
+    val allAttrs = allItems.flatMap(_.iterator.toList)
+    val allValues = allAttrs.flatMap(_.iterator.toList)
     <DomainMetadataResponse xmlns={namespace}>
       <DomainMetadataResult>
         <ItemCount>{allItems.size}</ItemCount>

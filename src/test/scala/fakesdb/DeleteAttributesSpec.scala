@@ -12,7 +12,7 @@ class DeleteAttributesSpec extends FlatSpec with ShouldMatchers {
 
   it should "throw an exception for missing ItemName param" in {
     val data = new Data
-    data.getOrCreateDomain("abc")
+    data.getOrCreate("abc")
     evaluating { new DeleteAttributes(data).handle(Map("DomainName" -> "abc")) } should produce [MissingItemNameException]
   }
 }

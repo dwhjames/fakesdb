@@ -25,7 +25,7 @@ class ItemUpdates extends LinkedHashMap[String, LinkedHashMap[String, AttributeU
     checkSize()
     foreach { case (itemName, attrs) => {
       attrs.foreach { case (attrName, attrUpdate) => {
-        domain.getOrCreateItem(itemName).put(attrName, attrUpdate.values, attrUpdate.replace)
+        domain.getOrCreate(itemName).put(attrName, attrUpdate.values, attrUpdate.replace)
       }}
     }}
   }
@@ -33,15 +33,13 @@ class ItemUpdates extends LinkedHashMap[String, LinkedHashMap[String, AttributeU
   def delete(domain: Domain): Unit = {
     checkSize()
     foreach { case (itemName, attrs) => {
-      val item = domain.getItem(itemName) match {
+      val item = domain.get(itemName) match {
         case Some(item) => {
           if (attrs.isEmpty) {
-            domain.deleteItem(item)
+            domain.remove(item)
           } else {
-            attrs.foreach { case (attrName, replace) => {
-              item.delete(attrName)
-            }}
-            domain.deleteIfEmpty(item)
+            attrs foreach { case (attrName, replace) => item.remove(attrName) }
+            domain.removeIfEmpty(item)
           }
         }
         case _ =>

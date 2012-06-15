@@ -10,10 +10,10 @@ trait ConditionalChecking {
   def checkConditionals(item: Item, params: Params) {
     for (condition <- discoverConditional(params)) {
       condition match {
-        case (name, None) => for (f <- item.getAttributes.find(_.name == name)) throw new ConditionalCheckFailedException(condition)
-        case (name, Some(value)) => item.getAttributes find (_.name == name) match {
+        case (name, None) => for (f <- item.iterator.find(_.name == name)) throw new ConditionalCheckFailedException(condition)
+        case (name, Some(value)) => item.iterator.find(_.name == name) match {
           case None => throw new AttributeDoesNotExistException(name)
-          case Some(attr) => if (attr.getValues.toList != List(value)) throw new ConditionalCheckFailedException(condition, attr.getValues.toList)
+          case Some(attr) => if (attr.iterator.toList != List(value)) throw new ConditionalCheckFailedException(condition, attr.iterator.toList)
         }
       }
     }

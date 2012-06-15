@@ -32,11 +32,11 @@ class ListDomainsSpec extends FlatSpec with ShouldMatchers {
 
   private def fixture(): Data = {
     val data = new Data
-    data.getOrCreateDomain("abc1")
-    data.getOrCreateDomain("abc2")
-    data.getOrCreateDomain("abc3")
-    data.getOrCreateDomain("abc4")
-    data.getOrCreateDomain("abc5")
+    data.getOrCreate("abc1")
+    data.getOrCreate("abc2")
+    data.getOrCreate("abc3")
+    data.getOrCreate("abc4")
+    data.getOrCreate("abc5")
     data
   }
 

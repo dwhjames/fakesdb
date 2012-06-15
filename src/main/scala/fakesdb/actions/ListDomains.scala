@@ -17,7 +17,7 @@ class ListDomains(data: Data) extends Action(data) {
     if (nextToken < 0) throw new InvalidNextTokenException
 
     val newNextToken = nextToken + total
-    val it = data.getDomains.slice(nextToken, newNextToken)
+    val it = data.iterator.slice(nextToken, newNextToken)
     if (nextToken > 0 && it.isEmpty) throw new InvalidNextTokenException
 
     <ListDomainsResponse xmlns={namespace}>

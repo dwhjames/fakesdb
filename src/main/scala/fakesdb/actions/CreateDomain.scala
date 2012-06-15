@@ -12,7 +12,7 @@ class CreateDomain(data: Data) extends Action(data) {
     } else if (domainName == "_dump") {
       dump(domainName)
     } else {
-      data.getOrCreateDomain(domainName)
+      data.getOrCreate(domainName)
     }
     <CreateDomainResponse xmlns={namespace}>
       {responseMetaData}
@@ -20,12 +20,12 @@ class CreateDomain(data: Data) extends Action(data) {
   }
 
   def dump(domainName: String) {
-    for (d <- data.getDomains) {
+    for (d <- data.iterator) {
       println("Domain "+d.name)
-      for (i <- d.getItems) {
+      for (i <- d.iterator) {
         println("\tItem "+i.name)
-        for (a <- i.getAttributes) {
-          println("\t\t"+a.name+" = "+a.getValues.mkString(", "))
+        for (a <- i.iterator) {
+          println("\t\t"+a.name+" = "+a.iterator.mkString(", "))
         }
       }
     }

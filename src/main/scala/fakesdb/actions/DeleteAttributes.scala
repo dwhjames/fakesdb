@@ -9,7 +9,7 @@ class DeleteAttributes(data: Data) extends Action(data) with ConditionalChecking
   def handle(params: Params): xml.Node = {
     val domain = parseDomain(params)
     val itemName = params.getOrElse("ItemName", throw new MissingItemNameException)
-    val item = domain.getItem(itemName) match {
+    val item = domain.get(itemName) match {
       case Some(item) => {
         checkConditionals(item, params)
         doDelete(params, domain, item)
@@ -24,13 +24,13 @@ class DeleteAttributes(data: Data) extends Action(data) with ConditionalChecking
   private def doDelete(params: Params, domain: Domain, item: Item) = {
     val destroy = discoverAttributes(params)
     if (destroy.isEmpty) {
-      domain.deleteItem(item)
+      domain.remove(item)
     } else {
-      for (attr <- destroy) attr._2 match {
-        case Some(value) => item.delete(attr._1, value)
-        case None => item.delete(attr._1)
+      for ((name, valOpt) <- destroy) valOpt match {
+        case Some(value) => item.remove(name, value)
+        case None => item.remove(name)
       }
-      domain.deleteIfEmpty(item)
+      domain.removeIfEmpty(item)
     }
   }
 

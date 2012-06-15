@@ -9,10 +9,7 @@ class GetAttributes(data: Data) extends Action(data) {
   def handle(params: Params): xml.Node = {
     val domain = parseDomain(params)
     val itemName = params.getOrElse("ItemName", throw new MissingItemNameException)
-    val items = domain.getItem(itemName) match {
-      case Some(item) => List(item)
-      case None => List()
-    }
+    val items = domain.get(itemName).toList
     val requested = discoverAttributes(params)
     <GetAttributesResponse xmlns={namespace}>
       <GetAttributesResult>
@@ -27,8 +24,8 @@ class GetAttributes(data: Data) extends Action(data) {
   }
 
   protected def filter(item: Item, requested: List[String]): Iterator[(Attribute, String)] = {
-    val attrs = item.getAttributes.filter((a: Attribute) => requested.isEmpty || requested.contains(a.name))
-    attrs.flatMap((a: Attribute) => a.getValues.map((v: String) => (a, v)))
+    val attrs = item.iterator.filter((a: Attribute) => requested.isEmpty || requested.contains(a.name))
+    attrs.flatMap((a: Attribute) => a.iterator.map((v: String) => (a, v)))
   }
 
   protected def discoverAttributes(params: Params): List[String] = {
