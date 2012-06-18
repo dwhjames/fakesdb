@@ -13,7 +13,7 @@ abstract class Action(data: Data) {
 
   protected def parseDomain(params: Params): Domain = {
     val domainName = params.getOrElse("DomainName", throw new MissingDomainNameException)
-    data.get(domainName)
+    data.get(domainName).getOrElse(throw new NoSuchDomainException)
   }
 
   val namespace = "http://sdb.amazonaws.com/doc/2009-04-15/"

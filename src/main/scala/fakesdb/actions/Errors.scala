@@ -28,6 +28,9 @@ class MissingDomainNameException
 class MissingItemNameException
   extends SDBException(400, "MissingParameter", "The request must contain the parameter ItemName.")
 
+class NoSuchDomainException
+  extends SDBException(400, "NoSuchDomain", "The specified domain does not exist.")
+
 class NumberItemAttributesExceededException
   extends SDBException(409, "NumberItemAttributesExceeded", "Too many attributes in this item")
 

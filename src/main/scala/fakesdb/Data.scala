@@ -10,8 +10,7 @@ class Data {
   private val domainNamePat = Pattern.compile("[a-zA-Z0-9_\\-\\.]{3,255}")
   def size: Int = domains.size
   def iterator: Iterator[Domain] = domains.valuesIterator
-  def get(domainName: String): Domain =
-    domains.getOrElse(domainName, throw new SDBException(400, "NoSuchDomain", "The specified domain does not exist."))
+  def get(domainName: String): Option[Domain] = domains.get(domainName)
   def getOrCreate(domainName: String): Domain = {
     if (!domainNamePat.matcher(domainName).matches())
       throw new InvalidParameterValue("Value (%s) for parameter DomainName is invalid.".format(domainName))
