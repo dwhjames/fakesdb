@@ -68,6 +68,7 @@ class Attribute(val name: String) {
   private val values = new mutable.LinkedHashSet[String]
   def iterator: Iterator[String] = values.iterator
   def isEmpty: Boolean = values.isEmpty
+  def size: Int = values.size
   def remove(value: String): Unit = values.remove(value)
   def put(_values: Seq[String], replace: Boolean): Unit = {
     if (replace) values.clear()
