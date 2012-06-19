@@ -2,6 +2,8 @@ package fakesdb
 
 import fakesdb.actions._
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.xml
 
 
@@ -41,11 +43,13 @@ class FakeSdbServlet extends HttpServlet {
   }
 
   private def parseParams(request: HttpServletRequest): Params = {
-    val p = new scala.collection.mutable.HashMap[String,String]
-    val i = request.getParameterMap.asInstanceOf[java.util.Map[String, Array[String]]].entrySet.iterator
-    while (i.hasNext) {
-      val e = i.next
-      p.update(e.getKey(), e.getValue()(0))
+    val p = new mutable.HashMap[String,String]
+    val s = request.getParameterMap.entrySet.asScala
+    for (e <- s) {
+      val arr = e.getValue
+      if (arr.size > 1)
+        throw new SDBException(400, "InvalidHttpRequest", "The HTTP request is invalid. Reason: Duplicate request parameters.")
+      p.update(e.getKey, arr(0))
     }
     p.toMap
   }
