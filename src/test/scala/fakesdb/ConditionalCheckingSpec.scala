@@ -55,7 +55,7 @@ class ConditionalCheckingSpec extends FlatSpec with ShouldMatchers {
 
   it should "throw an exception for an expectation on a multi-valued attribute" in {
     val item = new Item("myitem")
-    item.put("a", Seq("1", "2"), false)
+    item.put("a", Set("1", "2"), false)
     val thrown = evaluating { obj.checkConditionals(item, Map("Expected.Name" -> "a", "Expected.Exists" -> "true", "Expected.Value" -> "1")) } should produce [SDBException]
     thrown.xmlCode should equal ("MultiValuedAttribute")
   }

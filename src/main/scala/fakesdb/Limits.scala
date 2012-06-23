@@ -5,4 +5,5 @@ object Limits {
   val MaxNumOfDomains = 250
   val ParamValMaxLen = 1024
   val MaxNameValPairsPerItem = 256
+  val MaxNumOfSubmittedItems = 25
 }
