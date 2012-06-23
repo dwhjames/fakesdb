@@ -15,11 +15,12 @@ class InvalidParameterValue(message: String)
   extends SDBException(400, "InvalidParameterValue", message)
 
 object InvalidParameterValue {
-  def failIfOver1024(name: String, value: String): Unit = {
-    if (value.getBytes.size > Limits.ParamValMaxLen) {
-      throw new InvalidParameterValue("Value (\"%s\") for parameter %s is invalid. Value exceeds maximum length of 1024.".format(value, name));
-    }
-  }
+  def failIfOver1024(name: String, value: String): Unit =
+    if (value.getBytes.size > Limits.ParamValMaxLen)
+      throw new InvalidParameterValue("Value (%s) for parameter %s is invalid. Value exceeds maximum length of 1024.".format(value, name))
+  def failIfEmpty(name: String, value: String): Unit =
+    if (value.isEmpty)
+      throw new InvalidParameterValue("Value (%s) for parameter %s is invalid.The empty string is an illegal attribute name".format(value, name))
 }
 
 class MissingDomainNameException
