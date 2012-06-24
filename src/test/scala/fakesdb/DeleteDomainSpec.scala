@@ -1,6 +1,6 @@
 package fakesdb
 
-import fakesdb.actions.{DeleteDomain, SDBException, MissingDomainNameException, NoSuchDomainException}
+import fakesdb.actions._
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 
@@ -12,7 +12,17 @@ class DeleteDomainSpec extends FlatSpec with ShouldMatchers {
     evaluating { new DeleteDomain(data).handle(Map.empty) } should produce [MissingDomainNameException]
   }
 
-  it should "throw an exception for a non-existant domain name" in {
-    evaluating { new DeleteDomain(data).handle(Map("DomainName" -> "abc"))} should produce [NoSuchDomainException]
+  it should "ignore deletion of non-existant domain name" in {
+    data.size should be (0)
+    new DeleteDomain(data).handle(Map("DomainName" -> "mydom"))
+    data.size should be (0)
+  }
+
+  it should "delete an existing domain" in {
+    data.getOrCreate("mydom")
+    data.size should be (1)
+    new DeleteDomain(data).handle(Map("DomainName" -> "mydom"))
+    data.size should be (0)
+    data.flush()
   }
 }
