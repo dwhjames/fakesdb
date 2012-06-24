@@ -14,7 +14,7 @@ class PutAttributes(data: Data) extends Action(data) with ConditionalChecking {
 
     checkConditionals(item, params)
 
-    discoverAttributes(itemName, params).update(domain)
+    discoverAttributes(itemName, params).execUpdateOn(domain)
 
     <PutAttributesResponse xmlns={namespace}>
       {responseMetaData}

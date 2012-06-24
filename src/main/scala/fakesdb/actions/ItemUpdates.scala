@@ -20,7 +20,7 @@ class ItemUpdates extends mutable.LinkedHashMap[String, mutable.LinkedHashMap[St
     val attrs = getOrElseUpdate(itemName, new mutable.LinkedHashMap[String, AttributeUpdate])
   }
 
-  def update(domain: Domain): Unit = {
+  def execUpdateOn(domain: Domain): Unit = {
     checkSize()
     foreach { case (itemName, attrs) =>
       if (attrs.size > Limits.MaxNameValPairsPerItem)
@@ -34,7 +34,7 @@ class ItemUpdates extends mutable.LinkedHashMap[String, mutable.LinkedHashMap[St
     }
   }
 
-  def delete(domain: Domain): Unit = {
+  def execDeleteOn(domain: Domain): Unit = {
     checkSize()
     foreach { case (itemName, attrs) =>
       domain.get(itemName) foreach { item =>

@@ -9,7 +9,7 @@ class BatchDeleteAttributes(data: Data) extends Action(data) {
 
   def handle(params: Params): xml.Node = {
     val domain = parseDomain(params)
-    discoverAttributes(params).delete(domain)
+    discoverAttributes(params).execDeleteOn(domain)
     <BatchDeleteAttributesResponse xmlns={namespace}>
       {responseMetaData}
     </BatchDeleteAttributesResponse>

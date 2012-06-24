@@ -12,7 +12,7 @@ class DeleteAttributes(data: Data) extends Action(data) with ConditionalChecking
     InvalidParameterValue.failIfOver1024("Item", itemName)
     domain.get(itemName) foreach { item =>
       checkConditionals(item, params)
-      discoverAttributes(itemName, params).delete(domain)
+      discoverAttributes(itemName, params).execDeleteOn(domain)
     }
     <DeleteAttributesResponse xmlns={namespace}>
       {responseMetaData}

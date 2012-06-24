@@ -9,7 +9,7 @@ class BatchPutAttributes(data: Data) extends Action(data) {
 
   def handle(params: Params): xml.Node = {
     val domain = parseDomain(params)
-    discoverAttributes(params).update(domain)
+    discoverAttributes(params).execUpdateOn(domain)
     <BatchPutAttributesResponse xmlns={namespace}>
       {responseMetaData}
     </BatchPutAttributesResponse>
