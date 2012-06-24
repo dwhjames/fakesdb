@@ -1,6 +1,6 @@
 package fakesdb
 
-import fakesdb.actions.{CreateDomain, SDBException, InvalidParameterValue, MissingDomainNameException}
+import fakesdb.actions._
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 
@@ -17,6 +17,23 @@ class CreateDomainSpec extends FlatSpec with ShouldMatchers {
     thrown.message should equal ("Value (ab) for parameter DomainName is invalid.")
     thrown = evaluating { new CreateDomain(data).handle(Map("DomainName" -> "abc!"))} should produce [InvalidParameterValue]
     thrown.message should equal ("Value (abc!) for parameter DomainName is invalid.")
+  }
+
+  it should "create a new domain" in {
+    data.size should be (0)
+    new CreateDomain(data).handle(Map("DomainName" -> "mydom"))
+    data.size should be (1)
+    data.get("mydom").get
+    data.flush()
+  }
+
+  it should "ensure domain creation is idempotent" in {
+    data.size should be (0)
+    val domain = data.getOrCreate("mydom")
+    new CreateDomain(data).handle(Map("DomainName" -> "mydom"))
+    data.size should be (1)
+    data.get("mydom").get should be (domain)
+    data.flush()
   }
 
   it should "throw an exception when the domain limit has been exceeded" in {
