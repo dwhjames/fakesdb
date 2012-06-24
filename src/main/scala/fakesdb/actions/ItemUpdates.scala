@@ -8,17 +8,16 @@ class ItemUpdates extends mutable.LinkedHashMap[String, mutable.LinkedHashMap[St
   def add(itemName: String, attrName: String, attrValue: String, replace: Boolean): Unit = {
     val attrs = getOrElseUpdate(itemName, new mutable.LinkedHashMap[String, AttributeUpdate])
     val attr = attrs.getOrElseUpdate(attrName, new AttributeUpdate(replace))
+    attr.replace ||= replace
     attr.values += attrValue
   }
 
   def add(itemName: String, attrName: String): Unit = {
     val attrs = getOrElseUpdate(itemName, new mutable.LinkedHashMap[String, AttributeUpdate])
-    val attr = attrs.getOrElseUpdate(attrName, new AttributeUpdate(false))
+    attrs.getOrElseUpdate(attrName, new AttributeUpdate(false))
   }
 
-  def add(itemName: String): Unit = {
-    val attrs = getOrElseUpdate(itemName, new mutable.LinkedHashMap[String, AttributeUpdate])
-  }
+  def add(itemName: String): Unit = getOrElseUpdate(itemName, new mutable.LinkedHashMap[String, AttributeUpdate])
 
   def execUpdateOn(domain: Domain): Unit = {
     checkSize()
@@ -57,6 +56,6 @@ class ItemUpdates extends mutable.LinkedHashMap[String, mutable.LinkedHashMap[St
   }
 }
 
-class AttributeUpdate(val replace: Boolean) {
+class AttributeUpdate(var replace: Boolean) {
   val values = new mutable.HashSet[String]
 }
