@@ -36,19 +36,18 @@ class ItemUpdates extends mutable.LinkedHashMap[String, mutable.LinkedHashMap[St
 
   def delete(domain: Domain): Unit = {
     checkSize()
-    foreach { case (itemName, attrs) => {
-      val item = domain.get(itemName) match {
-        case Some(item) => {
-          if (attrs.isEmpty) {
-            domain.remove(item)
-          } else {
-            attrs foreach { case (attrName, replace) => item.remove(attrName) }
+    foreach { case (itemName, attrs) =>
+      domain.get(itemName) foreach { item =>
+          if (attrs.isEmpty) domain.remove(item)
+          else {
+            attrs foreach { case (attrName, attrUpdate) =>
+              if (attrUpdate.values.isEmpty) item.remove(attrName)
+              else for (attrValue <- attrUpdate.values) item.remove(attrName, attrValue)
+            }
             domain.removeIfEmpty(item)
           }
-        }
-        case _ =>
       }
-    }}
+    }
   }
 
   private def checkSize() = {
