@@ -14,7 +14,7 @@ class PutAttributesSpec extends FlatSpec with ShouldMatchers {
     evaluating { new PutAttributes(data).handle(Map.empty) } should produce [MissingDomainNameException]
   }
 
-  it should "throw an exception for a non-existant domain name" in {
+  it should "throw an exception for a non-existent domain name" in {
     evaluating { new PutAttributes(data).handle(Map("DomainName" -> "abc"))} should produce [NoSuchDomainException]
   }
 

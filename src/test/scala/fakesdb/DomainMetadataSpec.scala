@@ -12,7 +12,7 @@ class DomainMetadataSpec extends FlatSpec with ShouldMatchers {
     evaluating { new DomainMetadata(data).handle(Map.empty) } should produce [MissingDomainNameException]
   }
 
-  it should "throw an exception for a non-existant domain name" in {
+  it should "throw an exception for a non-existent domain name" in {
     evaluating { new DomainMetadata(data).handle(Map("DomainName" -> "mydom")) } should produce [NoSuchDomainException]
   }
 

@@ -21,7 +21,7 @@ class GetAttributesSpec extends FlatSpec with ShouldMatchers {
     evaluating { new GetAttributes(data).handle(Map.empty) } should produce [MissingDomainNameException]
   }
 
-  it should "throw an exception for a non-existant domain name" in {
+  it should "throw an exception for a non-existent domain name" in {
     evaluating { new GetAttributes(data).handle(Map("DomainName" -> "nodom"))} should produce [NoSuchDomainException]
   }
 
@@ -45,7 +45,7 @@ class GetAttributesSpec extends FlatSpec with ShouldMatchers {
     evaluating { new GetAttributes(data).handle(Map("DomainName" -> "mydom", "ItemName" -> "myItem", "AttributeName.0" -> longName)) } should produce [InvalidParameterValue]
   }
 
-  it should "return a empty result for a non-existant item name" in {
+  it should "return a empty result for a non-existent item name" in {
     val xmlResp = new GetAttributes(data).handle(Map("DomainName" -> "mydom", "ItemName" -> "noitem"))
     (xmlResp \ "GetAttributesResult" \ "_") should be ('empty)
   }

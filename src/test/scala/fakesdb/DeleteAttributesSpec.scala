@@ -14,7 +14,7 @@ class DeleteAttributesSpec extends FlatSpec with ShouldMatchers {
     evaluating { new DeleteAttributes(data).handle(Map.empty) } should produce [MissingDomainNameException]
   }
 
-  it should "throw an exception for a non-existant domain name" in {
+  it should "throw an exception for a non-existent domain name" in {
     evaluating { new DeleteAttributes(data).handle(Map("DomainName" -> "abc"))} should produce [NoSuchDomainException]
   }
 

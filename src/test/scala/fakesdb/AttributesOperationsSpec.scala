@@ -22,7 +22,7 @@ class AttributeOperationsSpec extends FeatureSpec with BeforeAndAfter with Given
 
   feature("The client can put, get, and delete attributes in an item") {
 
-    scenario("a non-existant domain name is used") {
+    scenario("a non-existent domain name is used") {
       when("a domain does not exist")
 
       then("a put attributes operation should throw an exception")
@@ -146,8 +146,8 @@ class AttributeOperationsSpec extends FeatureSpec with BeforeAndAfter with Given
       attrs should contain (new AWSAttribute("attr1", "val2"))
     }
 
-    scenario("a non-existant item is to be deleted") {
-      given("a non-existant item name")
+    scenario("a non-existent item is to be deleted") {
+      given("a non-existent item name")
 
       then("a delete attributes operation should still succeed")
       sdb.deleteAttributes(new DeleteAttributesRequest(domName, "noitem"))

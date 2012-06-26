@@ -12,7 +12,7 @@ class DeleteDomainSpec extends FlatSpec with ShouldMatchers {
     evaluating { new DeleteDomain(data).handle(Map.empty) } should produce [MissingDomainNameException]
   }
 
-  it should "ignore deletion of non-existant domain name" in {
+  it should "ignore deletion of non-existent domain name" in {
     data.size should be (0)
     new DeleteDomain(data).handle(Map("DomainName" -> "mydom"))
     data.size should be (0)
