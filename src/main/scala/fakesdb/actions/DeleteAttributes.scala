@@ -10,10 +10,11 @@ class DeleteAttributes(data: Data) extends Action(data) with ConditionalChecking
     val itemName = params.getOrElse("ItemName", throw new MissingItemNameException)
     InvalidParameterValue.failIfEmpty("Item", itemName)
     InvalidParameterValue.failIfOver1024("Item", itemName)
-    domain.get(itemName) foreach { item =>
-      checkConditionals(item, params)
-      discoverAttributes(itemName, params).execDeleteOn(domain)
-    }
+
+    checkConditionals(domain, itemName, params)
+
+    discoverAttributes(itemName, params).execDeleteOn(domain)
+
     <DeleteAttributesResponse xmlns={namespace}>
       {responseMetaData}
     </DeleteAttributesResponse>

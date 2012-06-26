@@ -8,14 +8,15 @@ trait ConditionalChecking {
   private val expectedExistsPat = """Expected\.(?:\d+\.)?Exists""".r
   private val expectedValPat = """Expected\.(?:\d+\.)?Value""".r
 
-  def checkConditionals(item: Item, params: Params): Unit = {
+  def checkConditionals(domain: Domain, itemName: String, params: Params): Unit = {
     for ((name, expect) <- discoverConditional(params))
       expect match {
         case None =>
-          for (attr <- item.get(name))
+          for (item <- domain.get(itemName); attr <- item.get(name))
             throw new SDBException(409, "ConditionalCheckFailed",
                                    "Conditional check failed. Attribute (%s) value exists.".format(name))
-        case Some(expectedVal) =>
+        case Some(expectedVal) => {
+          val item = domain.get(itemName).getOrElse(throw new SDBException(404, "AttributeDoesNotExist", "Attribute (%s) does not exist".format(name)))
           item.get(name) match {
             case None =>
               throw new SDBException(404, "AttributeDoesNotExist", "Attribute (%s) does not exist".format(name))
@@ -31,6 +32,7 @@ trait ConditionalChecking {
                                        "Conditional check failed. Attribute (%s) value is (%s) but was expected (%s)".format(name, actualVal, expectedVal))
               }
           }
+        }
       }
   }
 

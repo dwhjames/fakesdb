@@ -9,7 +9,6 @@ class PutAttributesSpec extends FlatSpec with ShouldMatchers {
   val data = new Data
   val longName = "a" * (Limits.ParamValMaxLen + 1)
   val domain = data.getOrCreate("mydom")
-  val item = domain.getOrCreate("myitem")
 
   "The PutAttributes action" should "throw an exception for missing DomainName param" in {
     evaluating { new PutAttributes(data).handle(Map.empty) } should produce [MissingDomainNameException]

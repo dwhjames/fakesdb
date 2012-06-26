@@ -41,43 +41,65 @@ class ConditionalCheckingSpec extends FlatSpec with ShouldMatchers {
     thrown.xmlCode should equal ("ExistsAndExpectedValue")
   }
 
+  it should "throw an exception when an expected item is not present" in {
+    val dom = new Domain("mydom")
+    val itemName = "myitem"
+    val thrown = evaluating { obj.checkConditionals(dom, itemName, Map("Expected.Name" -> "a", "Expected.Exists" -> "true", "Expected.Value" -> "1")) } should produce [SDBException]
+    thrown.xmlCode should equal ("AttributeDoesNotExist")
+    dom.get(itemName) should be ('empty)
+  }
+
   it should "throw an exception when an expected attribute is not present" in {
-    val thrown = evaluating { obj.checkConditionals(new Item("myitem"), Map("Expected.Name" -> "a", "Expected.Exists" -> "true", "Expected.Value" -> "1")) } should produce [SDBException]
+    val dom = new Domain("mydom")
+    val itemName = "myitem"
+    val item = dom.getOrCreate(itemName)
+    item.put("a", "1", false)
+    val thrown = evaluating { obj.checkConditionals(dom, itemName, Map("Expected.Name" -> "b", "Expected.Exists" -> "true", "Expected.Value" -> "2")) } should produce [SDBException]
     thrown.xmlCode should equal ("AttributeDoesNotExist")
   }
 
   it should "throw an exception when an attribute unexpectedly exists" in {
-    val item = new Item("myitem")
+    val dom = new Domain("mydom")
+    val itemName = "myitem"
+    val item = dom.getOrCreate(itemName)
     item.put("a", "1", false)
-    val thrown = evaluating { obj.checkConditionals(item, Map("Expected.Name" -> "a", "Expected.Exists" -> "false")) } should produce [SDBException]
+    val thrown = evaluating { obj.checkConditionals(dom, itemName, Map("Expected.Name" -> "a", "Expected.Exists" -> "false")) } should produce [SDBException]
     thrown.xmlCode should equal ("ConditionalCheckFailed")
   }
 
   it should "throw an exception for an expectation on a multi-valued attribute" in {
-    val item = new Item("myitem")
+    val dom = new Domain("mydom")
+    val itemName = "myitem"
+    val item = dom.getOrCreate(itemName)
     item.put("a", Set("1", "2"), false)
-    val thrown = evaluating { obj.checkConditionals(item, Map("Expected.Name" -> "a", "Expected.Exists" -> "true", "Expected.Value" -> "1")) } should produce [SDBException]
+    val thrown = evaluating { obj.checkConditionals(dom, itemName, Map("Expected.Name" -> "a", "Expected.Exists" -> "true", "Expected.Value" -> "1")) } should produce [SDBException]
     thrown.xmlCode should equal ("MultiValuedAttribute")
   }
 
   it should "throw an exception for a falisfied expectation" in {
-    val item = new Item("myitem")
+    val dom = new Domain("mydom")
+    val itemName = "myitem"
+    val item = dom.getOrCreate(itemName)
     item.put("a", "1", false)
-    val thrown = evaluating { obj.checkConditionals(item, Map("Expected.Name" -> "a", "Expected.Exists" -> "true", "Expected.Value" -> "2")) } should produce [SDBException]
+    val thrown = evaluating { obj.checkConditionals(dom, itemName, Map("Expected.Name" -> "a", "Expected.Exists" -> "true", "Expected.Value" -> "2")) } should produce [SDBException]
     thrown.xmlCode should equal ("ConditionalCheckFailed")
   }
 
   it should "succeed when an attribute does not exist, as expected" in {
-    val item = new Item("myitem")
+    val dom = new Domain("mydom")
+    val itemName = "myitem"
+    val item = dom.getOrCreate(itemName)
     item.put("a", "1", false)
-    obj.checkConditionals(item, Map("Expected.Name" -> "b", "Expected.Exists" -> "false"))
+    obj.checkConditionals(dom, itemName, Map("Expected.Name" -> "b", "Expected.Exists" -> "false"))
   }
 
   it should "succeed when the expected value for an attribute is found" in {
-    val item = new Item("myitem")
+    val dom = new Domain("mydom")
+    val itemName = "myitem"
+    val item = dom.getOrCreate(itemName)
     item.put("a", "1", false)
     item.put("b", "2", false)
-    obj.checkConditionals(item, Map("Expected.Name" -> "a", "Expected.Value" -> "1"))
-    obj.checkConditionals(item, Map("Expected.Name" -> "b", "Expected.Exists" -> "true", "Expected.Value" -> "2"))
+    obj.checkConditionals(dom, itemName, Map("Expected.Name" -> "a", "Expected.Value" -> "1"))
+    obj.checkConditionals(dom, itemName, Map("Expected.Name" -> "b", "Expected.Exists" -> "true", "Expected.Value" -> "2"))
   }
 }

@@ -11,7 +11,7 @@ class PutAttributes(data: Data) extends Action(data) with ConditionalChecking {
     InvalidParameterValue.failIfEmpty("Item", itemName)
     InvalidParameterValue.failIfOver1024("Item", itemName)
 
-    domain.get(itemName).foreach(checkConditionals(_, params))
+    checkConditionals(domain, itemName, params)
 
     discoverAttributes(itemName, params).execUpdateOn(domain)
 
