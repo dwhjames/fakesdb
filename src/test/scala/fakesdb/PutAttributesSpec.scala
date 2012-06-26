@@ -32,8 +32,9 @@ class PutAttributesSpec extends FlatSpec with ShouldMatchers {
   }
 
   it should "throw an exception for a missing Attribute.Name parameter" in {
-    val thrown = evaluating { new PutAttributes(data).handle(Map("DomainName" -> "mydom", "ItemName" -> "myitem")) } should produce [SDBException]
+    val thrown = evaluating { new PutAttributes(data).handle(Map("DomainName" -> "mydom", "ItemName" -> "newitem")) } should produce [SDBException]
     thrown.xmlCode should equal ("MissingParameter")
+    domain.get("newitem") should be ('empty)
   }
 
   it should "throw an exception for an Attribute.Name value that is empty" in {

@@ -10,9 +10,8 @@ class PutAttributes(data: Data) extends Action(data) with ConditionalChecking {
     val itemName = params.getOrElse("ItemName", throw new MissingItemNameException)
     InvalidParameterValue.failIfEmpty("Item", itemName)
     InvalidParameterValue.failIfOver1024("Item", itemName)
-    val item = domain.getOrCreate(itemName)
 
-    checkConditionals(item, params)
+    domain.get(itemName).foreach(checkConditionals(_, params))
 
     discoverAttributes(itemName, params).execUpdateOn(domain)
 
