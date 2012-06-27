@@ -167,4 +167,27 @@ trait FeatureSpecQueryBehaviors { this: FeatureSpec with ShouldMatchers =>
       items(2) should equal ("B000T9886K")
     }
   }
+
+  def countQueries(queryCount: (String) => Int) {
+
+    scenario("count with simple equality condition") {
+      val count = queryCount("select count(*) from mydomain where Title = 'The Right Stuff'")
+      count should be (1)
+    }
+
+    scenario("count with simple inequality condition") {
+      val count = queryCount("select count(*) from mydomain where Year > '1985'")
+      count should be (3)
+    }
+
+    scenario("count with large limit") {
+      val count = queryCount("select count(*) from mydomain limit 500")
+      count should be (6)
+    }
+
+    scenario("count with small limit") {
+      val count = queryCount("select count(*) from mydomain limit 4")
+      count should be (4)
+    }
+  }
 }

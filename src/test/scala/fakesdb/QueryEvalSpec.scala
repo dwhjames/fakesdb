@@ -21,6 +21,15 @@ class QueryEvalSpec extends FeatureSpec with BeforeAndAfter with ShouldMatchers 
   private def queryItemNames(query: String): Seq[String] =
     SelectParser.makeSelectEval(query).select(data)._1.map(_._1)
 
+  private def queryCount(query: String): Int = {
+    val res = SelectParser.makeSelectEval(query).select(data)._1
+    res should have size (1)
+    res(0)._1 should equal ("Domain")
+    val attrs = res(0)._2
+    attrs(0)._1 should equal ("Count")
+    attrs(0)._2.toInt
+  }
+
   feature("Simple Queries") {
     scenariosFor(simpleQueries(queryItemNames))
   }
@@ -39,5 +48,9 @@ class QueryEvalSpec extends FeatureSpec with BeforeAndAfter with ShouldMatchers 
 
   feature("Sort Queries") {
     scenariosFor(sortQueries(queryItemNames))
+  }
+
+  feature("Count Queries") {
+    scenariosFor(countQueries(queryCount))
   }
 }

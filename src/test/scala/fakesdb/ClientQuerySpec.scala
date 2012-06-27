@@ -35,6 +35,16 @@ class ClientQuerySpec extends FeatureSpec with ShouldMatchers with BeforeAndAfte
   private def queryItemNames(query: String): Seq[String] =
     sdb.select(new SelectRequest(query)).getItems.asScala.map(_.getName)
 
+  private def queryCount(query: String): Int = {
+    val items = sdb.select(new SelectRequest(query)).getItems.asScala
+    items should have size (1)
+    items(0).getName should equal ("Domain")
+    val attrs = items(0).getAttributes.asScala
+    attrs should have size (1)
+    attrs(0).getName should equal ("Count")
+    attrs(0).getValue.toInt
+  }
+
   feature("Simple Queries") {
     scenariosFor(simpleQueries(queryItemNames))
   }
@@ -53,5 +63,9 @@ class ClientQuerySpec extends FeatureSpec with ShouldMatchers with BeforeAndAfte
 
   feature("Sort Queries") {
     scenariosFor(sortQueries(queryItemNames))
+  }
+
+  feature("Count Queries") {
+    scenariosFor(countQueries(queryCount))
   }
 }
