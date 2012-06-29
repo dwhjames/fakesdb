@@ -74,7 +74,7 @@ class FakeSdbServlet extends HttpServlet {
 
   private def serveXML(response: HttpServletResponse, xmlNode: xml.Node): Unit = {
     response.setContentType("text/xml")
-    xml.XML.write(response.getWriter, xmlNode, "utf-8", true, null)
+    xml.XML.write(response.getWriter, xmlNode, enc = "utf-8", xmlDecl = true, doctype = null)
   }
 
   override def doPost(request: HttpServletRequest, response: HttpServletResponse): Unit = doGet(request, response)
