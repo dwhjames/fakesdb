@@ -6,7 +6,7 @@ import org.scalatest.matchers.ShouldMatchers
 
 class ConditionalCheckingSpec extends FlatSpec with ShouldMatchers {
 
-  val obj = new AnyRef with ConditionalChecking
+  val obj = new ConditionalChecking {}
 
   "Conditional Checking" should "throw an exception for multiple expectations" in {
     var thrown = evaluating { obj.discoverConditional(Map("Expected.1.Name" -> "a", "Expected.2.Name" -> "b", "Expected.1.Exists" -> "true", "Expected.1.Value" -> "1")) } should produce [SDBException]
