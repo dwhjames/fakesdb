@@ -53,4 +53,30 @@ class QueryEvalSpec extends FeatureSpec with BeforeAndAfter with ShouldMatchers 
   feature("Count Queries") {
     scenariosFor(countQueries(queryCount))
   }
+
+  feature("Limit Queries") {
+    scenario("ordered ascending and limited") {
+      val query = "select itemName() from mydomain where Year < '1980' order by Year asc limit 1"
+      var xmlResp = new actions.Select(data).handle(Map("SelectExpression" -> query))
+      var items = (xmlResp \\ "Item" \ "Name").map(_.text)
+      items should have size (1)
+      items(0) should equal ("0802131786")
+      var token = (xmlResp \\ "NextToken")
+      token should not be ('empty)
+
+      xmlResp = new actions.Select(data).handle(Map("SelectExpression" -> query, "NextToken" -> token.text))
+      items = (xmlResp \\ "Item" \ "Name").map(_.text)
+      items should have size (1)
+      items(0) should equal ("0385333498")
+      token = (xmlResp \\ "NextToken")
+      token should not be ('empty)
+
+      xmlResp = new actions.Select(data).handle(Map("SelectExpression" -> query, "NextToken" -> token.text))
+      items = (xmlResp \\ "Item" \ "Name").map(_.text)
+      items should have size (1)
+      items(0) should equal ("1579124585")
+      token = (xmlResp \\ "NextToken")
+      token should be ('empty)
+    }
+  }
 }

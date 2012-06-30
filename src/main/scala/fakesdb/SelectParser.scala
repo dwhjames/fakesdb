@@ -5,9 +5,9 @@ import scala.util.parsing.combinator.lexical.StdLexical
 import scala.util.parsing.input.CharArrayReader.EofCh
 
 case class SelectQuery(output: OutputClause, from: String, where: ItemPredicate, order: OrderClause, limit: LimitClause)  {
-  def select(data: Data, nextToken: Option[Int] = None): (Seq[(String, Seq[(String,String)])], Int, Boolean) = {
+  def select(data: Data, nextToken: Int = 0): (Seq[(String, Seq[(String,String)])], Int, Boolean) = {
     val domain = data.get(from).getOrElse(throw new actions.NoSuchDomainException)
-    val drop = new SomeDrop(nextToken getOrElse 0)
+    val drop = new SomeDrop(nextToken)
     val (items, numOfItems, hasMore) = limit.limit(drop.drop(order.sort(domain.iterator.filter(where).toSeq)))
     (output.what(items), numOfItems, hasMore)
   }
@@ -172,7 +172,7 @@ case object NoopLimit extends LimitClause {
 case class LimitBy(limit: Int) extends LimitClause {
   def limit(items: Seq[Item]) = {
     val l = items.length
-    (items take limit, l, l > limit)
+    (items take limit, l min limit, l > limit)
   }
 }
 

@@ -68,4 +68,30 @@ class ClientQuerySpec extends FeatureSpec with ShouldMatchers with BeforeAndAfte
   feature("Count Queries") {
     scenariosFor(countQueries(queryCount))
   }
+
+  feature("Limit Queries") {
+    scenario("ordered ascending and limited") {
+      val query = "select itemName() from mydomain where Year < '1980' order by Year asc limit 1"
+      var res = sdb.select(new SelectRequest(query))
+      var items = res.getItems.asScala.map(_.getName)
+      items should have size (1)
+      items(0) should equal ("0802131786")
+      var token = res.getNextToken()
+      token should not be (null)
+
+      res = sdb.select(new SelectRequest(query).withNextToken(token))
+      items = res.getItems.asScala.map(_.getName)
+      items should have size (1)
+      items(0) should equal ("0385333498")
+      token = res.getNextToken()
+      token should not be (null)
+
+      res = sdb.select(new SelectRequest(query).withNextToken(token))
+      items = res.getItems.asScala.map(_.getName)
+      items should have size (1)
+      items(0) should equal ("1579124585")
+      token = res.getNextToken()
+      token should be (null)
+    }
+  }
 }

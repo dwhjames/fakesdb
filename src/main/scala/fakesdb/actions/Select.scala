@@ -6,14 +6,18 @@ import fakesdb._
 class Select(data: Data) extends Action(data) {
 
   override def handle(params: Params): xml.Node = {
-    val nextToken = params.get("NextToken") map { _.toInt }
-    val itemsData = params.get("SelectExpression") match {
-      case Some(s) => val se = SelectParser.makeSelectEval(s) ; se.select(data, nextToken)
-      case None => sys.error("No select expression")
-    }
+    val nextToken = try {
+      params.get("NextToken").map(_.toInt).getOrElse(0)
+    } catch { case e: NumberFormatException => throw new InvalidNextTokenException }
+    if (nextToken < 0) throw new InvalidNextTokenException
+
+    val itemsData = params.get("SelectExpression")
+                          .map(SelectParser.makeSelectEval(_).select(data, nextToken))
+                          .getOrElse(throw new SDBException(400, "Missing Parameter",
+                                                            "The request must contain the parameter SelectExpression."))
     val items = itemsData._1
     val itemsLength = itemsData._2
-    val newNextToken = if (itemsData._3) List(itemsLength) else List()
+    val newNextToken = if (itemsData._3) List(nextToken + itemsLength) else List()
     <SelectResponse xmlns={namespace}>
       <SelectResult>
         {for (item <- items) yield
