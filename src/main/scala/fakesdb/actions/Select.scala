@@ -1,23 +1,34 @@
 package fakesdb.actions
 
+import java.nio.ByteBuffer
+import java.security.MessageDigest
+import javax.xml.bind.DatatypeConverter
 import scala.xml
 import fakesdb._
 
 class Select(data: Data) extends Action(data) {
 
   override def handle(params: Params): xml.Node = {
-    val nextToken = try {
-      params.get("NextToken").map(_.toInt).getOrElse(0)
-    } catch { case e: NumberFormatException => throw new InvalidNextTokenException }
-    if (nextToken < 0) throw new InvalidNextTokenException
+    val query = params.get("SelectExpression")
+                      .getOrElse(throw new SDBException(400, "Missing Parameter",
+                                 "The request must contain the parameter SelectExpression."))
+    val queryDigest = MessageDigest.getInstance("MD5").digest(query.getBytes("UTF-8"))
 
-    val itemsData = params.get("SelectExpression")
-                          .map(SelectParser.makeSelectEval(_).select(data, nextToken))
-                          .getOrElse(throw new SDBException(400, "Missing Parameter",
-                                                            "The request must contain the parameter SelectExpression."))
-    val items = itemsData._1
-    val itemsLength = itemsData._2
-    val newNextToken = if (itemsData._3) List(nextToken + itemsLength) else List()
+    val nextToken = try {
+      params.get("NextToken").map(str => {
+        val tokenBytes = DatatypeConverter.parseBase64Binary(str)
+        if ((tokenBytes.length != 20)) throw new InvalidNextTokenException
+        val buffer = ByteBuffer.allocate(20).put(tokenBytes)
+        buffer.rewind()
+        val tokenDigest = Array.ofDim[Byte](16)
+        buffer.get(tokenDigest)
+        if (!MessageDigest.isEqual(queryDigest, tokenDigest)) throw new InvalidNextTokenException
+        buffer.getInt
+      }).getOrElse(0)
+    } catch { case e: IllegalArgumentException => throw new InvalidNextTokenException }
+
+    val (items, itemsLength, itemsHasMore) = SelectParser.makeSelectEval(query).select(data, nextToken)
+
     <SelectResponse xmlns={namespace}>
       <SelectResult>
         {for (item <- items) yield
@@ -28,8 +39,13 @@ class Select(data: Data) extends Action(data) {
             }
           </Item>
         }
-        {for (token <- newNextToken) yield
-          <NextToken>{token}</NextToken>
+        {if (itemsHasMore)
+          <NextToken>{
+            DatatypeConverter.printBase64Binary(ByteBuffer.allocate(20)
+                                                          .put(queryDigest)
+                                                          .putInt(nextToken + itemsLength)
+                                                          .array)
+          }</NextToken>
         }
       </SelectResult>
       {responseMetaData}
